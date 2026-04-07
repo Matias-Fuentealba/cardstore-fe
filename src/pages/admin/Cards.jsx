@@ -333,6 +333,7 @@ export function AdminCards() {
         sets = ONEPIECE_SETS;
       }
       setAllSets(sets);
+      if (sets.length > 0) setSetDropOpen(true);
     } catch {
       showToast('Error al cargar sets', 'error');
     } finally {
