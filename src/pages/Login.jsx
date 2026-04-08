@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuthStore } from '../store/authStore';
 import { showToast } from '../components/ui/Toast';
+import { supabase } from '../lib/supabase';
 
 export function Login() {
   const [tab, setTab] = useState('login'); // 'login' | 'register'
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const { login } = useAuthStore();
   const navigate = useNavigate();
 
@@ -28,6 +30,19 @@ export function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) {
+      showToast('Error al iniciar sesión con Google', 'error');
+      setGoogleLoading(false);
+    }
+    // Si no hay error, Supabase redirige al proveedor — no se necesita setGoogleLoading(false)
   };
 
   const handleRegister = async (e) => {
@@ -118,13 +133,17 @@ export function Login() {
                   <span className="bg-[#141414] px-2 text-gray-500">O continuar con</span>
                 </div>
               </div>
-              <a
-                href={`http://localhost:3000/api/v1/auth/google`}
-                className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-300 hover:bg-white/10 transition-colors"
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-300 hover:bg-white/10 disabled:opacity-50 transition-colors"
               >
-                <GoogleIcon />
+                {googleLoading
+                  ? <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>
+                  : <GoogleIcon />}
                 Continuar con Google
-              </a>
+              </button>
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-4">

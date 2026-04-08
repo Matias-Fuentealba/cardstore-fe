@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Auth, api } from '../api';
+import { supabase } from '../lib/supabase';
 
 let _refreshTimer = null;
 
@@ -36,8 +37,38 @@ export const useAuthStore = create((set, get) => ({
     return data;
   },
 
+  // Called from AuthCallback after Google OAuth success
+  loginWithSupabase: async (session) => {
+    const { access_token, user: supaUser } = session;
+    Auth.setToken(access_token);
+
+    let user;
+    try {
+      // Backend now accepts Supabase JWTs and does upsert — get real profile with role
+      user = await api.user.me();
+    } catch {
+      // Fallback: build from Supabase metadata if backend is unreachable
+      const meta = supaUser.user_metadata ?? {};
+      const fullName = (meta.full_name ?? meta.name ?? '').trim();
+      const parts = fullName.split(' ');
+      user = {
+        id: supaUser.id,
+        email: supaUser.email,
+        firstName: parts[0] ?? '',
+        lastName: parts.slice(1).join(' ') ?? '',
+        avatar: meta.avatar_url ?? meta.picture ?? null,
+        role: 'customer',
+      };
+    }
+
+    Auth.setUser(user);
+    set({ user, token: access_token, isLoggedIn: true });
+    return { user };
+  },
+
   logout: async () => {
     await api.auth.logout().catch(() => {});
+    await supabase.auth.signOut().catch(() => {});
     clearTimeout(_refreshTimer);
     Auth.clear();
     set({ user: null, token: null, isLoggedIn: false });

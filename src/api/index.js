@@ -1,6 +1,8 @@
 /**
  * Infinity Store — API Client
  */
+import { supabase } from '../lib/supabase';
+
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
@@ -15,6 +17,12 @@ export const Auth = {
   removeUser() { localStorage.removeItem('user'); },
   isLoggedIn() { return !!this.getToken(); },
   clear() { this.removeToken(); this.removeUser(); },
+  isSupabaseToken(t = this.getToken()) {
+    try {
+      const { iss } = JSON.parse(atob(t.split('.')[1]));
+      return typeof iss === 'string' && iss.includes('supabase');
+    } catch { return false; }
+  },
 };
 
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
@@ -34,6 +42,22 @@ async function apiFetch(path, options = {}, retry = true) {
   });
 
   if (res.status === 401 && retry) {
+    // If it's a Supabase token, the backend doesn't support it yet — don't redirect
+    if (Auth.isSupabaseToken()) {
+      const err = await res.json().catch(() => ({}));
+      throw { status: 401, ...err };
+    }
+
+    // 1. Try refreshing via Supabase (for Google OAuth users)
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token && session.access_token !== token) {
+        Auth.setToken(session.access_token);
+        return apiFetch(path, options, false);
+      }
+    } catch { /* ignore */ }
+
+    // 2. Fall back to backend refresh (for email/password users)
     const refreshed = await api.auth.refresh().catch(() => null);
     if (refreshed) {
       Auth.setToken(refreshed.accessToken);

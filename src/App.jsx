@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useCartStore } from './store/cartStore';
+import { Auth } from './api';
+import { supabase } from './lib/supabase';
 import { Toast } from './components/ui/Toast';
 import { Navbar } from './components/layout/Navbar';
 import { AdminLayout } from './components/layout/AdminLayout';
@@ -10,6 +12,7 @@ import { AdminLayout } from './components/layout/AdminLayout';
 import { Home }     from './pages/Home';
 import { Login }    from './pages/Login';
 import { NotFound } from './pages/NotFound';
+import { AuthCallback } from './pages/AuthCallback';
 
 import { Singles }    from './pages/Singles';
 import { Search }     from './pages/Search';
@@ -45,6 +48,20 @@ export default function App() {
   useEffect(() => {
     initAuth();
     refreshCart();
+
+    // Sync Supabase session changes to Auth/store
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED' && session) {
+        Auth.setToken(session.access_token);
+        useAuthStore.setState({ token: session.access_token });
+      }
+      if (event === 'SIGNED_OUT') {
+        Auth.clear();
+        useAuthStore.setState({ user: null, token: null, isLoggedIn: false });
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return (
@@ -54,6 +71,7 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
         <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         <Route path="/singles"  element={<PublicLayout><Singles /></PublicLayout>} />
         <Route path="/search"   element={<PublicLayout><Search /></PublicLayout>} />
