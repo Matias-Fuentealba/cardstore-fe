@@ -190,17 +190,19 @@ function CardItem({ card, viewMode }) {
               <CartBtn />
             </div>
           : <div className="flex items-center gap-2 mt-1" onClick={e => e.stopPropagation()}>
-              <select
-                value={activeCond}
-                onChange={e => setSelectedCond(e.target.value)}
-                className="flex-1 text-xs font-semibold bg-white/5 border border-white/10 rounded-xl px-2 py-1.5 text-gray-200 focus:outline-none focus:border-violet-500 cursor-pointer"
-              >
-                {availableConds.map(c => (
-                  <option key={c.key} value={c.key} disabled={c.stock === 0}>
-                    {COND_LABELS[c.key]} — {c.stock === 0 ? 'Sin stock' : formatCLP(c.price)}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1 min-w-0">
+                <select
+                  value={activeCond}
+                  onChange={e => setSelectedCond(e.target.value)}
+                  className="w-full text-xs font-semibold bg-white/5 border border-white/10 rounded-xl px-2 py-1.5 text-gray-200 focus:outline-none focus:border-violet-500 cursor-pointer"
+                >
+                  {availableConds.map(c => (
+                    <option key={c.key} value={c.key} disabled={c.stock === 0}>
+                      {COND_LABELS[c.key]} — {c.stock === 0 ? 'Sin stock' : formatCLP(c.price)}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <CartBtn />
             </div>
         }
