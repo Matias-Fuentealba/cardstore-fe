@@ -23,7 +23,7 @@ function CheckAnimation() {
   );
 }
 
-// ─── Detail row ───────────────────────────────────────────────────────────────
+// ─── Detail raow ───────────────────────────────────────────────────────────────
 function DetailRow({ label, value, accent = false }) {
   return (
     <div className="flex justify-between text-sm">
