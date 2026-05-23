@@ -140,8 +140,8 @@ export const api = {
   },
 
   payments: {
-    intent: () => POST('/payments/intent', {}),
-    status: (id) => GET(`/payments/${id}/status`),
+    start: (payload) => POST('/payments/start', payload),
+    getStatus: (tokenTrx) => GET(`/payments/${tokenTrx}`),
   },
 
   user: {

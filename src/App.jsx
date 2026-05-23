@@ -19,6 +19,8 @@ import { Search }     from './pages/Search';
 import { CardDetail } from './pages/CardDetail';
 import { Cart }     from './pages/Cart';
 import { Checkout } from './pages/Checkout';
+import { PaymentSuccess } from './pages/PaymentSuccess';
+import { PaymentError }   from './pages/PaymentError';
 import { Profile }     from './pages/Profile';
 import { Deckbuilder } from './pages/Deckbuilder';
 import { AdminCards }     from './pages/admin/Cards';
@@ -80,6 +82,8 @@ export default function App() {
 
         {/* Private */}
         <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
+        <Route path="/pago/exito" element={<PaymentSuccess />} />
+        <Route path="/pago/error" element={<PaymentError />} />
         <Route path="/profile"     element={<PrivateRoute><PublicLayout><Profile /></PublicLayout></PrivateRoute>} />
         <Route path="/deckbuilder" element={<PublicLayout><Deckbuilder /></PublicLayout>} />
         {/* Admin */}

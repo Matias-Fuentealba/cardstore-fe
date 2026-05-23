@@ -95,6 +95,24 @@ function CheckAnimation() {
   );
 }
 
+// ─── WebPay redirect ─────────────────────────────────────────────────────────
+function redirectToTransbank(redirectUrl, tbkToken) {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = redirectUrl;
+  form.target = '_self';
+  [['token_ws', tbkToken], ['TBK_TOKEN', tbkToken]].forEach(([name, value]) => {
+    const input = document.createElement('input');
+    input.type  = 'hidden';
+    input.name  = name;
+    input.value = value;
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export function Checkout() {
   const navigate = useNavigate();
@@ -109,7 +127,7 @@ export function Checkout() {
   // Step 1 — shipping form
   const [form, setForm] = useState({
     nombre: '', apellido: '', email: '', tel: '',
-    address: '', region: '', cp: '',
+    rut: '', address: '', region: '', cp: '',
   });
   const [comunaInput, setComunaInput] = useState('');
   const [comunaId,    setComunaId]    = useState(null);
@@ -122,8 +140,7 @@ export function Checkout() {
   const comunaDebounceRef = useRef(null);
 
   // Step 2 — payment
-  const [payMethod, setPayMethod] = useState('card');
-  const [cardNumber, setCardNumber] = useState('');
+  const [payMethod, setPayMethod] = useState('webpay');
 
   const setField = (key) => (val) => setForm(f => ({ ...f, [key]: val }));
 
@@ -188,7 +205,7 @@ export function Checkout() {
   };
 
   const goToStep2 = () => {
-    const required = ['nombre', 'apellido', 'email', 'address', 'cp'];
+    const required = ['nombre', 'apellido', 'email', 'rut', 'address', 'cp'];
     const missing = required.some(k => !form[k].trim());
     if (missing || !comunaId) { setShippingError('Completa todos los campos obligatorios.'); return; }
     if (!selectedQuote) { setShippingError('Selecciona un método de envío.'); return; }
@@ -200,7 +217,25 @@ export function Checkout() {
   const confirmOrder = async () => {
     setConfirming(true);
     try {
-      const payload = {
+
+      // ── WebPay: ir directo a Transbank, sin crear orden previa ──────────────
+      if (payMethod === 'webpay') {
+        const paymentRes = await api.payments.start({
+          orderId:       `ORD-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+          amount:        grandTotal,
+          customerName:  `${form.nombre} ${form.apellido}`.trim(),
+          customerRut:   form.rut,
+          customerEmail: form.email,
+          customerPhone: form.tel || undefined,
+          urlSuccess: `${window.location.origin}/pago/exito`,
+          urlError:   `${window.location.origin}/pago/error`,
+        });
+        redirectToTransbank(paymentRes.redirectUrl, paymentRes.tbkToken);
+        return;
+      }
+
+      // ── Otros métodos: crear la orden y mostrar confirmación ────────────────
+      const orderRes = await api.orders.create({
         shipping: {
           firstName: form.nombre,
           lastName:  form.apellido,
@@ -212,18 +247,17 @@ export function Checkout() {
           communeId: comunaId,
           zipCode:   form.cp,
         },
-        paymentMethod: payMethod,
-        paymentToken:  'tok_demo_' + Date.now(),
+        paymentMethod:  payMethod,
         shippingMethod: selectedQuote?.tipoEntrega || 'standard',
         shippingCost:   selectedQuote?.costoTotal ?? 0,
-      };
-      const res = await api.orders.create(payload);
-      setOrder(res);
+      });
+      setOrder(orderRes);
       refreshCart();
       setStep(3);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
     } catch (ex) {
-      showToast(ex.error || 'Error al confirmar el pedido', 'error');
+      showToast(ex.error || ex.message || 'Error al confirmar el pedido', 'error');
     } finally {
       setConfirming(false);
     }
@@ -295,6 +329,7 @@ export function Checkout() {
                     <FormInput label="Apellido *"   value={form.apellido} onChange={setField('apellido')} placeholder="García" />
                     <FormInput label="Email *"      type="email" value={form.email} onChange={setField('email')} placeholder="juan@email.com" />
                     <FormInput label="Teléfono"     type="tel"   value={form.tel}   onChange={setField('tel')}   placeholder="+56 9 0000 0000" />
+                    <FormInput label="RUT *"         value={form.rut}   onChange={setField('rut')}   placeholder="12.345.678-9" />
                     <div className="sm:col-span-2">
                       <FormInput label="Dirección *" value={form.address} onChange={setField('address')} placeholder="Calle, número, piso/depto" />
                     </div>
@@ -408,9 +443,9 @@ export function Checkout() {
                   </h2>
 
                   <div className="flex gap-3 mb-6">
-                    <PayTab value="card" selected={payMethod === 'card'} onSelect={setPayMethod}
+                    <PayTab value="webpay" selected={payMethod === 'webpay'} onSelect={setPayMethod}
                       icon={<span className="material-symbols-outlined text-violet-400 text-2xl">credit_card</span>}
-                      label="Tarjeta" />
+                      label="WebPay" />
                     <PayTab value="mercadopago" selected={payMethod === 'mercadopago'} onSelect={setPayMethod}
                       icon={<span className="text-blue-400 font-black text-sm">Mercado<span className="text-cyan-400">Pago</span></span>}
                       label="Mercado Pago" />
@@ -419,29 +454,33 @@ export function Checkout() {
                       label="Transferencia" />
                   </div>
 
-                  {payMethod === 'card' && (
-                    <div className="space-y-5">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-300 mb-1.5">Número de tarjeta</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={cardNumber}
-                            onChange={e => {
-                              const v = e.target.value.replace(/\D/g, '').slice(0, 16);
-                              setCardNumber(v.replace(/(.{4})/g, '$1 ').trim());
-                            }}
-                            placeholder="0000 0000 0000 0000"
-                            maxLength={19}
-                            className="w-full px-4 py-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 tracking-widest"
-                          />
-                          <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">credit_card</span>
-                        </div>
+                  {payMethod === 'webpay' && (
+                    <div className="text-center py-8">
+                      <div className="flex items-center justify-center mx-auto mb-5">
+                        <img
+                          src="https://www.transbank.cl/public/img/webpay-plus/logo_webpay_plus_color.svg"
+                          alt="WebPay Plus"
+                          className="h-14 object-contain"
+                          onError={e => { e.target.style.display = 'none'; }}
+                        />
                       </div>
-                      <FormInput label="Nombre en la tarjeta" value="" onChange={() => {}} placeholder="JUAN GARCIA" />
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormInput label="Vencimiento" value="" onChange={() => {}} placeholder="MM / AA" />
-                        <FormInput label="CVV" value="" onChange={() => {}} placeholder="123" />
+                      <h3 className="font-bold text-white mb-2">Pagar con WebPay Plus</h3>
+                      <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
+                        Serás redirigido al formulario seguro de Transbank para completar tu pago con tarjeta de débito, crédito o prepago.
+                      </p>
+                      <div className="flex items-center justify-center gap-6 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm text-green-400">lock</span>
+                          Conexión SSL
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm text-green-400">verified_user</span>
+                          Pago 100% seguro
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm text-violet-400">credit_card</span>
+                          Débito / Crédito
+                        </span>
                       </div>
                     </div>
                   )}
@@ -497,7 +536,9 @@ export function Checkout() {
                       {confirming
                         ? <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>
                         : <span className="material-symbols-outlined">lock</span>}
-                      {confirming ? 'Procesando…' : 'Confirmar pedido'}
+                      {confirming
+                        ? (payMethod === 'webpay' ? 'Conectando con WebPay…' : 'Procesando…')
+                        : (payMethod === 'webpay' ? 'Pagar con WebPay' : 'Confirmar pedido')}
                     </button>
                   </div>
                 </div>
