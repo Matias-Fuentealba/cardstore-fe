@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, formatCLP } from '../api';
+import { useCartStore } from '../store/cartStore';
 
 // ─── Check animation ──────────────────────────────────────────────────────────
 function CheckAnimation() {
@@ -37,6 +38,7 @@ function DetailRow({ label, value, accent = false }) {
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const tokenTrx = searchParams.get('tokenTrx');
+  const refreshCart = useCartStore(s => s.refresh);
 
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,12 @@ export function PaymentSuccess() {
       return;
     }
     api.payments.getStatus(tokenTrx)
-      .then(data => { setPayment(data); setLoading(false); })
+      .then(data => {
+        setPayment(data);
+        setLoading(false);
+        // Sincronizar el carrito local (el backend ya lo vació al confirmar el pago)
+        refreshCart();
+      })
       .catch(() => { setError('No se pudo obtener el resultado del pago.'); setLoading(false); });
   }, [tokenTrx]);
 
