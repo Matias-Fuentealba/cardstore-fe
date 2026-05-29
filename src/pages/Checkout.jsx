@@ -237,7 +237,7 @@ export function Checkout() {
           shippingCost:   selectedQuote?.costoTotal ?? 0,
         });
         const paymentRes = await api.payments.start({
-          orderId:       orderRes.id,
+          orderId:       orderRes.orderId,
           amount:        grandTotal,
           customerName:  `${form.nombre} ${form.apellido}`.trim(),
           customerRut:   form.rut,
