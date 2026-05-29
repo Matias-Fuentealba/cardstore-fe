@@ -218,10 +218,26 @@ export function Checkout() {
     setConfirming(true);
     try {
 
-      // ── WebPay: ir directo a Transbank, sin crear orden previa ──────────────
+      // ── WebPay: crear orden primero, luego iniciar pago en Transbank ─────────
       if (payMethod === 'webpay') {
+        const orderRes = await api.orders.create({
+          shipping: {
+            firstName: form.nombre,
+            lastName:  form.apellido,
+            email:     form.email,
+            phone:     form.tel,
+            address:   form.address,
+            region:    form.region,
+            city:      comunaInput,
+            communeId: comunaId,
+            zipCode:   form.cp,
+          },
+          paymentMethod:  'webpay',
+          shippingMethod: selectedQuote?.tipoEntrega || 'standard',
+          shippingCost:   selectedQuote?.costoTotal ?? 0,
+        });
         const paymentRes = await api.payments.start({
-          orderId:       `ORD-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+          orderId:       orderRes.id,
           amount:        grandTotal,
           customerName:  `${form.nombre} ${form.apellido}`.trim(),
           customerRut:   form.rut,
