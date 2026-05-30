@@ -403,6 +403,29 @@ export function Checkout() {
                     </button>
                   </div>
 
+                  {/* Retiro en tienda — siempre visible */}
+                  <div className="mt-3">
+                    {(() => {
+                      const retiro = { tipoEntrega: 'RETIRO_TIENDA', costoTotal: 0, diasEntrega: null, tipoServicio: '' };
+                      const sel    = selectedQuote?.tipoEntrega === 'RETIRO_TIENDA';
+                      return (
+                        <label className="block cursor-pointer">
+                          <input type="radio" name="shipping-method" className="hidden"
+                            onChange={() => { setSelectedQuote(retiro); setShippingError(''); }} />
+                          <div className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all
+                            ${sel ? 'border-violet-600 bg-violet-600/10' : 'border-white/10 hover:border-violet-500/50'}`}>
+                            <span className="material-symbols-outlined text-violet-400">storefront</span>
+                            <div className="flex-1">
+                              <p className={`text-sm font-bold ${sel ? 'text-violet-400' : 'text-white'}`}>Retiro en tienda</p>
+                              <p className="text-xs text-gray-400">Coordinar retiro por WhatsApp / redes sociales</p>
+                            </div>
+                            <span className={`text-sm font-bold ${sel ? 'text-violet-400' : 'text-white'}`}>Gratis</span>
+                          </div>
+                        </label>
+                      );
+                    })()}
+                  </div>
+
                   {quotes.length > 0 && (
                     <div className="mt-3 space-y-3">
                       {quotes.map((r, i) => {
