@@ -95,6 +95,8 @@ export const api = {
     refresh: () => apiFetch('/auth/refresh', { method: 'POST', body: JSON.stringify({}) }, false),
     forgotPassword: (email) => POST('/auth/forgot-password', { email }),
     resetPassword: (token, password) => POST('/auth/reset-password', { token, password }),
+    verifyEmail: (email, code) => POST('/auth/verify-email', { email, code }),
+    resendVerification: (email) => POST('/auth/resend-verification', { email }),
   },
 
   cards: {

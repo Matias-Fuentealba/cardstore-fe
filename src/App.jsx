@@ -13,6 +13,7 @@ import { Home }     from './pages/Home';
 import { Login }    from './pages/Login';
 import { NotFound } from './pages/NotFound';
 import { AuthCallback } from './pages/AuthCallback';
+import { VerifyEmail } from './pages/VerifyEmail';
 
 import { Singles }    from './pages/Singles';
 import { Search }     from './pages/Search';
@@ -73,6 +74,7 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
         <Route path="/login" element={<Login />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
 
         <Route path="/singles"  element={<PublicLayout><Singles /></PublicLayout>} />

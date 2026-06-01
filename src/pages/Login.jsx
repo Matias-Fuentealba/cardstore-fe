@@ -14,21 +14,42 @@ export function Login() {
 
   // Login form state
   const [loginForm, setLoginForm] = useState({ email: '', password: '', remember: false });
+  // Estado para email no verificado
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
+  const [resendingVerif, setResendingVerif] = useState(false);
 
   // Register form state
   const [regForm, setRegForm] = useState({ firstName: '', lastName: '', email: '', password: '', confirm: '' });
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setUnverifiedEmail(null);
     setLoading(true);
     try {
       const data = await login(loginForm.email, loginForm.password, loginForm.remember);
       showToast('¡Bienvenido de vuelta!');
       navigate(data.user?.role === 'admin' ? '/admin/cards' : '/');
     } catch (err) {
-      showToast(err.message || 'Credenciales incorrectas', 'error');
+      if (err.code === 'EMAIL_NOT_VERIFIED' || err.status === 403) {
+        setUnverifiedEmail(loginForm.email);
+      } else {
+        showToast(err.message || 'Credenciales incorrectas', 'error');
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendFromLogin = async () => {
+    if (!unverifiedEmail) return;
+    setResendingVerif(true);
+    try {
+      await api.auth.resendVerification(unverifiedEmail);
+      showToast('Código reenviado a ' + unverifiedEmail);
+    } catch (err) {
+      showToast(err.message || 'Error al reenviar el código', 'error');
+    } finally {
+      setResendingVerif(false);
     }
   };
 
@@ -53,9 +74,13 @@ export function Login() {
     }
     setLoading(true);
     try {
-      await api.auth.register(regForm.firstName, regForm.lastName, regForm.email, regForm.password);
-      showToast('Cuenta creada. Ahora inicia sesión.');
-      setTab('login');
+      const data = await api.auth.register(regForm.firstName, regForm.lastName, regForm.email, regForm.password);
+      if (data?.requiresVerification) {
+        navigate('/verify-email', { state: { email: regForm.email } });
+      } else {
+        showToast('Cuenta creada. Ahora inicia sesión.');
+        setTab('login');
+      }
     } catch (err) {
       showToast(err.message || 'Error al registrar', 'error');
     } finally {
@@ -94,9 +119,34 @@ export function Login() {
           {tab === 'login' ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <Field label="Email" type="email" value={loginForm.email}
-                onChange={(v) => setLoginForm(f => ({ ...f, email: v }))} />
+                onChange={(v) => { setLoginForm(f => ({ ...f, email: v })); setUnverifiedEmail(null); }} />
               <Field label="Contraseña" type="password" value={loginForm.password}
                 onChange={(v) => setLoginForm(f => ({ ...f, password: v }))} />
+
+              {/* Banner email no verificado */}
+              {unverifiedEmail && (
+                <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-sm text-yellow-300">
+                  <p className="font-semibold mb-1 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-base">warning</span>
+                    Debes verificar tu email
+                  </p>
+                  <p className="text-yellow-400/80 mb-2">Revisa tu bandeja de entrada o{' '}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/verify-email', { state: { email: unverifiedEmail } })}
+                      className="underline hover:text-yellow-300"
+                    >ingresa el código aquí</button>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResendFromLogin}
+                    disabled={resendingVerif}
+                    className="text-yellow-300 hover:text-yellow-200 disabled:opacity-50 underline text-xs"
+                  >
+                    {resendingVerif ? 'Reenviando…' : 'Reenviar código'}
+                  </button>
+                </div>
+              )}
 
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
