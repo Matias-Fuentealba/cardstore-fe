@@ -34,6 +34,9 @@ export const useAuthStore = create((set, get) => ({
     Auth.setUser(data.user);
     scheduleTokenRefresh(data.accessToken);
     set({ user: data.user, token: data.accessToken, isLoggedIn: true });
+    // Sincronizar badge del carrito con el carrito del usuario autenticado
+    const { useCartStore } = await import('./cartStore');
+    useCartStore.getState().refresh().catch(() => {});
     return data;
   },
 
