@@ -308,7 +308,7 @@ export function Home() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="Tu correo electrónico"
                   required
-                  className="flex-1 px-6 py-4 rounded-xl border-none text-slate-900 focus:ring-2 focus:ring-white outline-none"
+                  className="flex-1 px-6 py-4 rounded-xl border-none text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-white outline-none"
                 />
                 <button
                   type="submit"
