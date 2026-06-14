@@ -57,7 +57,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-1">
           <NavLink to="/singles">Singles</NavLink>
           <NavLink to="/search">Catálogo</NavLink>
-          <NavLink to="/deckbuilder">Deckbuilder</NavLink>
+          {/* <NavLink to="/deckbuilder">Deckbuilder</NavLink> */}
         </div>
 
         {/* Right icons */}
