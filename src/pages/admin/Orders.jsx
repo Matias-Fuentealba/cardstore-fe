@@ -4,15 +4,17 @@ import { showToast } from '../../components/ui/Toast';
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  pending:   { label: 'Pendiente',  cls: 'bg-orange-500/15 text-orange-400', icon: 'hourglass_empty' },
-  confirmed: { label: 'Confirmada', cls: 'bg-blue-500/15 text-blue-400',     icon: 'check'           },
-  shipped:   { label: 'Enviada',    cls: 'bg-indigo-500/15 text-indigo-400', icon: 'local_shipping'  },
-  delivered: { label: 'Entregada',  cls: 'bg-green-500/15 text-green-400',   icon: 'check_circle'    },
-  cancelled: { label: 'Cancelada',  cls: 'bg-red-500/15 text-red-400',       icon: 'cancel'          },
+  pending:   { label: 'Pendiente',      cls: 'bg-orange-500/15 text-orange-400', icon: 'hourglass_empty' },
+  preparing: { label: 'En preparación', cls: 'bg-yellow-500/15 text-yellow-400', icon: 'inventory_2'     },
+  confirmed: { label: 'Confirmado',     cls: 'bg-blue-500/15 text-blue-400',     icon: 'check'           },
+  shipped:   { label: 'Enviado',        cls: 'bg-indigo-500/15 text-indigo-400', icon: 'local_shipping'  },
+  delivered: { label: 'Entregado',      cls: 'bg-green-500/15 text-green-400',   icon: 'check_circle'    },
+  cancelled: { label: 'Cancelado',      cls: 'bg-red-500/15 text-red-400',       icon: 'cancel'          },
 };
 const NEXT_STATUSES = {
-  pending:   ['confirmed', 'cancelled'],
-  confirmed: ['shipped', 'cancelled'],
+  pending:   ['preparing', 'cancelled'],
+  preparing: ['confirmed', 'cancelled'],
+  confirmed: ['shipped',   'cancelled'],
   shipped:   ['delivered'],
   delivered: [],
   cancelled: [],
@@ -374,7 +376,7 @@ export function AdminOrders() {
     }
   }
 
-  const STATUS_TABS = ['', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+  const STATUS_TABS = ['', 'pending', 'preparing', 'confirmed', 'shipped', 'delivered', 'cancelled'];
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
@@ -384,7 +386,7 @@ export function AdminOrders() {
         {[
           { label: 'Facturado',    icon: 'payments',        color: 'text-violet-400', bg: 'bg-violet-600/15', val: formatCLP(revenue) },
           { label: 'Pendientes',   icon: 'hourglass_empty', color: 'text-orange-400', bg: 'bg-orange-500/15', val: counts.pending   || 0 },
-          { label: 'Confirmadas',  icon: 'check',           color: 'text-blue-400',   bg: 'bg-blue-500/15',   val: counts.confirmed || 0 },
+          { label: 'En preparación', icon: 'inventory_2',    color: 'text-yellow-400', bg: 'bg-yellow-500/15', val: counts.preparing || 0 },
           { label: 'En envío',     icon: 'local_shipping',  color: 'text-indigo-400', bg: 'bg-indigo-500/15', val: counts.shipped   || 0 },
         ].map(s => (
           <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl p-6">
