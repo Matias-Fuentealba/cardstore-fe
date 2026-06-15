@@ -182,6 +182,97 @@ function ClearModal({ count, onConfirm, onClose }) {
   );
 }
 
+// ─── Bulk stock modal ─────────────────────────────────────────────────────────
+function BulkStockModal({ total, onConfirm, onClose }) {
+  const [lang,   setLang]   = useState('en');
+  const [data,   setData]   = useState({ nm: { price: '', qty: '' }, lp: { price: '', qty: '' }, mp: { price: '', qty: '' }, hp: { price: '', qty: '' } });
+  const [saving, setSaving] = useState(false);
+
+  function setField(cond, field, val) {
+    setData(d => ({ ...d, [cond]: { ...d[cond], [field]: val } }));
+  }
+
+  async function handleConfirm() {
+    const conditions = ['nm', 'lp', 'mp', 'hp']
+      .filter(c => parseInt(data[c].price) > 0 || parseInt(data[c].qty) > 0)
+      .map(c => ({ condition: c, price: parseInt(data[c].price) || 0, qty: parseInt(data[c].qty) || 0 }));
+    if (!conditions.length) { showToast('Ingresá al menos un precio o stock', 'warn'); return; }
+    setSaving(true);
+    try {
+      await onConfirm(lang, conditions);
+    } catch (ex) {
+      showToast(ex.error || 'Error al aplicar stock', 'error');
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 bg-violet-600/15 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-violet-400">inventory_2</span>
+          </div>
+          <div>
+            <h3 className="font-bold text-white">Stock masivo</h3>
+            <p className="text-xs text-gray-400">Se aplicará a <span className="font-semibold text-white">{total?.toLocaleString('es-CL') ?? '?'} cartas</span> según el filtro actual</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-1.5">Idioma</label>
+            <select value={lang} onChange={e => setLang(e.target.value)}
+              className="w-full px-3 py-2.5 bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm">
+              {[['en','Inglés'],['es','Español'],['jp','Japonés'],['pt','Portugués'],['fr','Francés'],['de','Alemán'],['ko','Coreano']].map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-white/10">
+            <table className="w-full text-sm">
+              <thead className="bg-white/5">
+                <tr>
+                  {['Condición', 'Precio (CLP)', 'Stock'].map(h => (
+                    <th key={h} className="px-3 py-2 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {[['nm','NM','text-green-400'],['lp','LP','text-blue-400'],['mp','MP','text-amber-400'],['hp','HP','text-red-400']].map(([c, label, color]) => (
+                  <tr key={c}>
+                    <td className={`px-3 py-2 font-bold ${color}`}>{label}</td>
+                    <td className="px-3 py-2">
+                      <input type="number" value={data[c].price} min="0" placeholder="—"
+                        onChange={e => setField(c, 'price', e.target.value)}
+                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-violet-500 transition-colors" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" value={data[c].qty} min="0" placeholder="—"
+                        onChange={e => setField(c, 'qty', e.target.value)}
+                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-violet-500 transition-colors" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-start gap-2.5 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3">
+            <span className="material-symbols-outlined text-amber-400 text-base mt-0.5">warning</span>
+            <p className="text-xs text-gray-400">Solo se aplican las condiciones donde ingreses precio o stock. Las filas vacías no se tocan.</p>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 text-gray-300 font-semibold text-sm rounded-xl hover:bg-white/5 transition">Cancelar</button>
+          <button onClick={handleConfirm} disabled={saving}
+            className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl transition">
+            {saving ? 'Aplicando...' : 'Aplicar stock'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export function AdminCards() {
   // Import panel
@@ -202,16 +293,20 @@ export function AdminCards() {
   const [tableLoading,  setTableLoading]  = useState(true);
   const [tableTotal,    setTableTotal]    = useState(0);
   const [tableSearch,   setTableSearch]   = useState('');
-  const [filterGame,    setFilterGame]    = useState('');
-  const [filterRarity,  setFilterRarity]  = useState('');
-  const [tablePage,     setTablePage]     = useState(1);
+  const [filterGame,         setFilterGame]         = useState('');
+  const [filterSet,          setFilterSet]          = useState('');
+  const [filterRarity,       setFilterRarity]       = useState('');
+  const [tablePage,          setTablePage]          = useState(1);
+  const [tableSets,          setTableSets]          = useState([]);
+  const [tableSetsLoading,   setTableSetsLoading]   = useState(false);
 
   // Stats
   const [stats, setStats] = useState({});
 
   // Modals
-  const [editCard,    setEditCard]    = useState(null);
-  const [clearModal,  setClearModal]  = useState(false);
+  const [editCard,        setEditCard]        = useState(null);
+  const [clearModal,      setClearModal]      = useState(false);
+  const [bulkStockModal,  setBulkStockModal]  = useState(false);
 
   const filterTimeout = useRef(null);
   const setDropRef    = useRef(null);
@@ -239,8 +334,9 @@ export function AdminCards() {
     setTableLoading(true);
     try {
       const params = { limit: PAGE_SIZE, page };
-      if (tableSearch) params.q = tableSearch;
-      if (filterGame)  params.game = filterGame;
+      if (tableSearch)  params.q = tableSearch;
+      if (filterGame)   params.game = filterGame;
+      if (filterSet)    params.set = filterSet;
       if (filterRarity) params.rarity = filterRarity;
       const data = await api.admin.cards.list(params);
       setTableCards(data.data || data || []);
@@ -255,6 +351,18 @@ export function AdminCards() {
   function handleTableFilter() {
     clearTimeout(filterTimeout.current);
     filterTimeout.current = setTimeout(() => loadTable(1), 350);
+  }
+
+  async function loadTableSets(game) {
+    setTableSetsLoading(true);
+    try {
+      const data = await api.sets(game);
+      setTableSets(data || []);
+    } catch {
+      setTableSets([]);
+    } finally {
+      setTableSetsLoading(false);
+    }
   }
 
   // ── Game switch ──────────────────────────────────────────────────────────────
@@ -384,12 +492,51 @@ export function AdminCards() {
 
   // ── Activate all visible ──────────────────────────────────────────────────────
   async function activateAllVisible() {
-    const inactive = tableCards.filter(c => !c.active);
-    if (!inactive.length) { showToast('Todas las cartas visibles ya están activas'); return; }
-    if (!confirm(`¿Activar las ${inactive.length} carta${inactive.length !== 1 ? 's' : ''} inactivas visibles?`)) return;
+    let allCards;
+    try {
+      const params = { limit: 9999 };
+      if (tableSearch)  params.q = tableSearch;
+      if (filterGame)   params.game = filterGame;
+      if (filterSet)    params.set = filterSet;
+      if (filterRarity) params.rarity = filterRarity;
+      const data = await api.admin.cards.list(params);
+      allCards = data.data || data || [];
+    } catch {
+      showToast('Error al cargar cartas', 'error');
+      return;
+    }
+    const inactive = allCards.filter(c => !c.active);
+    if (!inactive.length) { showToast('Todas las cartas del filtro ya están activas'); return; }
+    if (!confirm(`¿Activar ${inactive.length} carta${inactive.length !== 1 ? 's' : ''} inactivas?`)) return;
     await Promise.all(inactive.map(c => api.admin.cards.setActive(c.id, true).catch(() => {})));
-    setTableCards(prev => prev.map(c => ({ ...c, active: true })));
+    loadTable(tablePage);
     showToast(`${inactive.length} cartas activadas`);
+  }
+
+  async function handleBulkStock(lang, conditions) {
+    let allCards;
+    try {
+      const params = { limit: 9999 };
+      if (tableSearch)  params.q = tableSearch;
+      if (filterGame)   params.game = filterGame;
+      if (filterSet)    params.set = filterSet;
+      if (filterRarity) params.rarity = filterRarity;
+      const data = await api.admin.cards.list(params);
+      allCards = data.data || data || [];
+    } catch {
+      showToast('Error al cargar cartas', 'error');
+      return;
+    }
+    if (!allCards.length) { showToast('No hay cartas que coincidan con el filtro', 'warn'); return; }
+    const rows = [];
+    allCards.forEach(card => {
+      conditions.forEach(({ condition, price, qty }) => {
+        rows.push({ cardId: card.id, condition, qty, price, language: lang });
+      });
+    });
+    await api.admin.inventory.bulkUpload(rows);
+    showToast(`Stock aplicado a ${allCards.length} carta${allCards.length !== 1 ? 's' : ''}`);
+    setBulkStockModal(false);
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────────
@@ -590,19 +737,42 @@ export function AdminCards() {
                 placeholder="Buscar carta..."
                 className="pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors w-56" />
             </div>
-            {[
-              { val: filterGame,   setter: setFilterGame,   options: [['','Todos los juegos'],...GAMES.map(g => [g.id, g.label.split(' ').slice(1).join(' ')])] },
-              { val: filterRarity, setter: setFilterRarity, options: [['','Todas las rarezas'],['Common','Common'],['Uncommon','Uncommon'],['Rare','Rare'],['Ultra Rare','Ultra Rare'],['Secret Rare','Secret Rare']] },
-            ].map((f, i) => (
-              <select key={i} value={f.val} onChange={e => { f.setter(e.target.value); handleTableFilter(); }}
+            {/* Juego */}
+            <select value={filterGame}
+              onChange={e => {
+                const g = e.target.value;
+                setFilterGame(g); setFilterSet(''); setTableSets([]);
+                if (g) loadTableSets(g);
+                handleTableFilter();
+              }}
+              className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
+              <option value="">Todos los juegos</option>
+              {GAMES.map(g => <option key={g.id} value={g.id}>{g.label.split(' ').slice(1).join(' ')}</option>)}
+            </select>
+            {/* Edición (solo si hay juego seleccionado) */}
+            {filterGame && (
+              <select value={filterSet} onChange={e => { setFilterSet(e.target.value); handleTableFilter(); }}
                 className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
-                {f.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                <option value="">{tableSetsLoading ? 'Cargando...' : 'Todas las ediciones'}</option>
+                {tableSets.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
-            ))}
+            )}
+            {/* Rareza */}
+            <select value={filterRarity} onChange={e => { setFilterRarity(e.target.value); handleTableFilter(); }}
+              className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
+              {[['','Todas las rarezas'],['Common','Common'],['Uncommon','Uncommon'],['Rare','Rare'],['Ultra Rare','Ultra Rare'],['Secret Rare','Secret Rare']].map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
             <button onClick={activateAllVisible}
               className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-semibold rounded-xl transition border border-white/10">
               <span className="material-symbols-outlined text-base">toggle_on</span>
               Activar todo
+            </button>
+            <button onClick={() => setBulkStockModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-semibold rounded-xl transition border border-white/10">
+              <span className="material-symbols-outlined text-base">inventory_2</span>
+              Stock masivo
             </button>
             <button onClick={() => setClearModal(true)}
               className="flex items-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-semibold rounded-xl transition border border-red-500/20">
@@ -720,6 +890,13 @@ export function AdminCards() {
           count={tableTotal}
           onConfirm={handleClearCatalog}
           onClose={() => setClearModal(false)}
+        />
+      )}
+      {bulkStockModal && (
+        <BulkStockModal
+          total={tableTotal}
+          onConfirm={handleBulkStock}
+          onClose={() => setBulkStockModal(false)}
         />
       )}
     </div>
