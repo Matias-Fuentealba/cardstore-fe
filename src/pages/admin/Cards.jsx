@@ -64,29 +64,18 @@ function Toggle({ checked, onChange }) {
 function EditModal({ card, onSave, onClose }) {
   const [name, setName] = useState(card.name || '');
   const [lang, setLang] = useState('en');
-  const [prices, setPrices] = useState({ nm: '', lp: '', mp: '', hp: '' });
-  const [stock,  setStock]  = useState({ nm: '', lp: '', mp: '', hp: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const inv = card.inventory && typeof card.inventory === 'object' ? card.inventory : {};
     const existingLang = Object.keys(inv).find(l => l !== 'default') || 'en';
-    const langData = inv[existingLang] || inv.default || Object.values(inv)[0] || {};
     setLang(existingLang);
-    setPrices({ nm: langData.nm?.price ?? '', lp: langData.lp?.price ?? '', mp: langData.mp?.price ?? '', hp: langData.hp?.price ?? '' });
-    setStock({ nm: langData.nm?.stock ?? '', lp: langData.lp?.stock ?? '', mp: langData.mp?.stock ?? '', hp: langData.hp?.stock ?? '' });
   }, [card]);
 
   async function handleSave() {
     setSaving(true);
-    const p = {}, s = {};
-    ['nm', 'lp', 'mp', 'hp'].forEach(c => {
-      const pv = parseInt(prices[c]) || 0;
-      const sv = parseInt(stock[c]) || 0;
-      if (pv > 0 || sv > 0) { p[c] = pv; s[c] = sv; }
-    });
     try {
-      await api.admin.cards.update(card.id, { name: name.trim(), language: lang, prices: p, stock: s });
+      await api.admin.cards.update(card.id, { name: name.trim(), language: lang });
       onSave();
       showToast('Carta actualizada');
     } catch (ex) {
@@ -98,7 +87,7 @@ function EditModal({ card, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-white">Editar carta</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
@@ -106,50 +95,23 @@ function EditModal({ card, onSave, onClose }) {
           </button>
         </div>
         <div className="space-y-4">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-300 mb-1.5">Nombre</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-300 mb-1.5">Idioma</label>
-              <select value={lang} onChange={e => setLang(e.target.value)}
-                className="px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm">
-                {[['en','Inglés'],['es','Español'],['jp','Japonés'],['pt','Portugués'],['fr','Francés'],['de','Alemán'],['ko','Coreano']].map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-1.5">Nombre</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm" />
           </div>
-
-          <div className="overflow-hidden rounded-xl border border-white/10">
-            <table className="w-full text-sm">
-              <thead className="bg-white/5">
-                <tr>
-                  {['Condición', 'Precio (CLP)', 'Stock'].map(h => (
-                    <th key={h} className="px-3 py-2 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {[['nm','NM','text-green-400'],['lp','LP','text-blue-400'],['mp','MP','text-amber-400'],['hp','HP','text-red-400']].map(([c, label, color]) => (
-                  <tr key={c}>
-                    <td className={`px-3 py-2 font-bold ${color}`}>{label}</td>
-                    <td className="px-3 py-2">
-                      <input type="number" value={prices[c]} onChange={e => setPrices(p => ({ ...p, [c]: e.target.value }))} min="0"
-                        placeholder="0"
-                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-violet-500 transition-colors" />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input type="number" value={stock[c]} onChange={e => setStock(s => ({ ...s, [c]: e.target.value }))} min="0"
-                        placeholder="0"
-                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-violet-500 transition-colors" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-1.5">Idioma</label>
+            <select value={lang} onChange={e => setLang(e.target.value)}
+              className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm">
+              {[['en','Inglés'],['es','Español'],['jp','Japonés'],['pt','Portugués'],['fr','Francés'],['de','Alemán'],['ko','Coreano']].map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-start gap-2.5 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3">
+            <span className="material-symbols-outlined text-violet-400 text-base mt-0.5">info</span>
+            <p className="text-xs text-gray-400">Para ajustar precio y stock, usá la sección <span className="font-semibold text-gray-300">Inventario</span>.</p>
           </div>
         </div>
         <div className="flex gap-3 mt-6">

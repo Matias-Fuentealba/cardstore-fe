@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { api, formatCLP } from '../../api';
-import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../../components/ui/Toast';
 
 // ─── Status config ────────────────────────────────────────────────────────────
@@ -18,47 +17,206 @@ const NEXT_STATUSES = {
   delivered: [],
   cancelled: [],
 };
+const COND_COLORS = {
+  nm: 'bg-green-500/15 text-green-400',
+  lp: 'bg-blue-500/15 text-blue-400',
+  mp: 'bg-amber-500/15 text-amber-400',
+  hp: 'bg-red-500/15 text-red-400',
+};
 
 const PAGE_SIZE = 20;
 
-// ─── Inline expandable detail row ────────────────────────────────────────────
-function OrderDetailRow({ order }) {
+function isRetiroOrder(order) {
+  return order.shippingMethod === 'retiro' || order.shippingMethod === 'pickup' || order.shippingMethod === 'store_pickup';
+}
+
+// ─── Order detail modal ───────────────────────────────────────────────────────
+function OrderModal({ order, onClose, onStatusChange }) {
+  const s            = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+  const nextStatuses = NEXT_STATUSES[order.status] || [];
+  const customer     = [order.shipping?.firstName, order.shipping?.lastName].filter(Boolean).join(' ') || '—';
+  const retiro       = isRetiroOrder(order);
+
   return (
-    <tr>
-      <td colSpan={8} className="px-4 pb-4">
-        <div className="bg-white/5 rounded-xl p-4 ml-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-3xl shadow-2xl max-h-[90vh] flex flex-col">
+
+        {/* Header */}
+        <div className="p-6 border-b border-white/10 flex items-center justify-between flex-shrink-0">
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase mb-1">Dirección de envío</p>
-            <p className="text-gray-300">{order.shipping?.address || '—'}</p>
-            <p className="text-gray-500">{[order.shipping?.city, order.shipping?.zipCode].filter(Boolean).join(' · ')}</p>
-            <p className="text-gray-500">{order.shipping?.phone || ''}</p>
+            <div className="flex items-center gap-2.5">
+              <h3 className="font-bold text-white font-mono text-lg">#{order.id}</h3>
+              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${s.cls}`}>
+                <span className="material-symbols-outlined text-xs">{s.icon}</span>
+                {s.label}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {order.date
+                ? new Date(order.date).toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })
+                : '—'}
+            </p>
           </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase mb-1">Productos</p>
-            {(order.items || []).map((item, i) => (
-              <div key={i} className="flex items-center gap-2 mb-1">
-                <div className="w-7 h-9 rounded bg-white/10 overflow-hidden flex-shrink-0">
-                  <img src={item.image || ''} alt={item.name} className="w-full h-full object-contain" />
-                </div>
-                <span className="text-gray-300 truncate">{item.name || '—'} <span className="text-gray-500">×{item.qty || 1}</span></span>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
+            <span className="material-symbols-outlined text-gray-500">close</span>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 p-6 space-y-5">
+
+          {/* Cliente + Envío */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white/[0.03] rounded-xl p-4 space-y-2.5">
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Cliente</p>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-gray-500 text-base">person</span>
+                <span className="text-sm text-white font-semibold">{customer}</span>
               </div>
-            ))}
-            {!(order.items?.length) && <p className="text-gray-500">Sin detalle</p>}
+              {order.shipping?.email && (
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-gray-500 text-base">email</span>
+                  <span className="text-sm text-gray-300">{order.shipping.email}</span>
+                </div>
+              )}
+              {order.shipping?.phone && (
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-gray-500 text-base">phone</span>
+                  <span className="text-sm text-gray-300">{order.shipping.phone}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-gray-500 text-base">credit_card</span>
+                <span className="text-sm text-gray-300">{order.paymentMethod || '—'}</span>
+              </div>
+            </div>
+
+            <div className="bg-white/[0.03] rounded-xl p-4 space-y-2.5">
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Envío</p>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-base" style={{ color: retiro ? '#fb923c' : '#60a5fa' }}>
+                  {retiro ? 'storefront' : 'local_shipping'}
+                </span>
+                <span className={`text-sm font-semibold ${retiro ? 'text-orange-400' : 'text-blue-400'}`}>
+                  {retiro ? 'Retiro en tienda' : 'Despacho a domicilio'}
+                </span>
+              </div>
+              {!retiro && order.shipping?.address && (
+                <div className="flex items-start gap-2">
+                  <span className="material-symbols-outlined text-gray-500 text-base mt-0.5">location_on</span>
+                  <div>
+                    <p className="text-sm text-gray-300">{order.shipping.address}</p>
+                    <p className="text-xs text-gray-500">
+                      {[order.shipping.city, order.shipping.zipCode].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {order.trackingNumber && (
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-gray-500 text-base">pin</span>
+                  <span className="text-sm text-gray-300 font-mono">{order.trackingNumber}</span>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Productos */}
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase mb-1">Resumen</p>
-            <div className="space-y-1">
-              <div className="flex justify-between"><span className="text-gray-500">Método pago</span><span className="font-medium text-gray-300">{order.paymentMethod || '—'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Costo envío</span><span className="font-medium text-gray-300">{formatCLP(order.shippingCost || 0)}</span></div>
-              {order.discount > 0 && <div className="flex justify-between"><span className="text-gray-500">Descuento</span><span className="font-medium text-green-400">-{formatCLP(order.discount)}</span></div>}
-              <div className="flex justify-between font-black border-t border-white/10 pt-1 mt-1">
-                <span>Total</span><span className="text-violet-400">{formatCLP(order.total || 0)}</span>
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3">Productos</p>
+            <div className="bg-white/[0.03] rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-white/5">
+                  <tr>
+                    {['Carta', 'Cond.', 'Idioma', 'Qty', 'Precio unit.', 'Subtotal'].map(h => (
+                      <th key={h} className="px-4 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {(order.items || []).map((item, i) => (
+                    <tr key={i}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-11 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
+                            <img src={item.image || ''} alt={item.name} className="w-full h-full object-contain" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white">{item.name || '—'}</p>
+                            <p className="text-xs text-gray-500">{item.setName || item.set || '—'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {item.condition
+                          ? <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold ${COND_COLORS[item.condition] || 'bg-white/5 text-gray-400'}`}>{item.condition.toUpperCase()}</span>
+                          : <span className="text-gray-500">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-[11px] font-bold text-gray-400 bg-white/5 px-2 py-0.5 rounded-full">
+                          {item.language?.toUpperCase() || '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-300 font-semibold">×{item.qty || 1}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{item.price ? formatCLP(item.price) : '—'}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-white">
+                        {item.price ? formatCLP(item.price * (item.qty || 1)) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                  {!(order.items?.length) && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">Sin detalle de productos</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Resumen financiero */}
+          <div className="bg-white/[0.03] rounded-xl p-4">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3">Resumen</p>
+            <div className="space-y-2 max-w-xs ml-auto">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Costo de envío</span>
+                <span className="text-gray-300">{formatCLP(order.shippingCost || 0)}</span>
+              </div>
+              {order.discount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Descuento</span>
+                  <span className="text-green-400">-{formatCLP(order.discount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-black text-base border-t border-white/10 pt-2 mt-2">
+                <span className="text-white">Total</span>
+                <span className="text-violet-400">{formatCLP(order.total || 0)}</span>
               </div>
             </div>
           </div>
         </div>
-      </td>
-    </tr>
+
+        {/* Footer: cambiar estado */}
+        {nextStatuses.length > 0 && (
+          <div className="p-6 border-t border-white/10 flex items-center justify-between flex-shrink-0">
+            <p className="text-sm text-gray-400">Cambiar estado de la orden</p>
+            <select
+              defaultValue=""
+              onChange={e => { if (e.target.value) onStatusChange(order.id, e.target.value); }}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-300 focus:outline-none focus:border-violet-500 transition-colors"
+            >
+              <option value="">— Mover a —</option>
+              {nextStatuses.map(ns => (
+                <option key={ns} value={ns}>{STATUS_CONFIG[ns]?.label || ns}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -106,17 +264,15 @@ function ShippingModal({ orderId, onConfirm, onClose }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export function AdminOrders() {
-  const { user, logout } = useAuthStore();
-
-  const [orders,    setOrders]    = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [search,    setSearch]    = useState('');
-  const [dateFrom,  setDateFrom]  = useState('');
-  const [dateTo,    setDateTo]    = useState('');
-  const [page,      setPage]      = useState(1);
-  const [expandedId, setExpandedId] = useState(null);
-  const [shippingModal, setShippingModal] = useState(null); // { orderId, selectRef }
+  const [orders,        setOrders]        = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [statusFilter,  setStatusFilter]  = useState('');
+  const [search,        setSearch]        = useState('');
+  const [dateFrom,      setDateFrom]      = useState('');
+  const [dateTo,        setDateTo]        = useState('');
+  const [page,          setPage]          = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [shippingModal, setShippingModal] = useState(null);
 
   useEffect(() => { loadOrders(); }, []);
 
@@ -134,11 +290,11 @@ export function AdminOrders() {
 
   // ── Derived ─────────────────────────────────────────────────────────────────
   const filtered = orders.filter(o => {
-    const q = search.toLowerCase();
+    const q      = search.toLowerCase();
     const matchQ = !q || o.id?.toLowerCase().includes(q) ||
       [o.shipping?.firstName, o.shipping?.lastName, o.shipping?.email].filter(Boolean).join(' ').toLowerCase().includes(q);
     const matchStatus = !statusFilter || o.status === statusFilter;
-    const oDate = o.date?.slice(0, 10);
+    const oDate  = o.date?.slice(0, 10);
     const matchFrom = !dateFrom || oDate >= dateFrom;
     const matchTo   = !dateTo   || oDate <= dateTo;
     return matchQ && matchStatus && matchFrom && matchTo;
@@ -147,8 +303,11 @@ export function AdminOrders() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const pageSlice  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const counts = {};
+  const counts  = {};
   orders.forEach(o => { counts[o.status] = (counts[o.status] || 0) + 1; });
+  const revenue = orders
+    .filter(o => o.status !== 'cancelled')
+    .reduce((sum, o) => sum + (o.total || 0), 0);
 
   // ── Export XLSX ──────────────────────────────────────────────────────────────
   async function handleExport() {
@@ -156,24 +315,34 @@ export function AdminOrders() {
     const XLSX = await import('xlsx');
     const rows = [];
     filtered.forEach(order => {
+      const retiro   = isRetiroOrder(order);
+      const customer = [order.shipping?.firstName, order.shipping?.lastName].filter(Boolean).join(' ') || '—';
       (order.items || []).forEach(item => {
         rows.push({
-          TCG:        item.game || '—',
-          Edición:    item.setName || item.set || '—',
-          Idioma:     item.language || '—',
-          Número:     item.cardNumber || item.number || '—',
-          Nombre:     item.name || '—',
-          Condición:  item.condition?.toUpperCase() || '—',
-          Cantidad:   item.qty || 1,
-          '# Orden':  order.id,
-          Cliente:    [order.shipping?.firstName, order.shipping?.lastName].filter(Boolean).join(' ') || '—',
-          Fecha:      order.date ? new Date(order.date).toLocaleDateString('es-CL') : '—',
+          '# Orden':       order.id,
+          Fecha:           order.date ? new Date(order.date).toLocaleDateString('es-CL') : '—',
+          Estado:          STATUS_CONFIG[order.status]?.label || order.status || '—',
+          Cliente:         customer,
+          Email:           order.shipping?.email || '—',
+          Teléfono:        order.shipping?.phone || '—',
+          'Tipo envío':    retiro ? 'Retiro en tienda' : 'Despacho',
+          Tracking:        order.trackingNumber || '—',
+          TCG:             item.game || '—',
+          Edición:         item.setName || item.set || '—',
+          Nombre:          item.name || '—',
+          Número:          item.cardNumber || item.number || '—',
+          Condición:       item.condition?.toUpperCase() || '—',
+          Idioma:          item.language?.toUpperCase() || '—',
+          Cantidad:        item.qty || 1,
+          'Precio unit.':  item.price || 0,
+          Subtotal:        (item.price || 0) * (item.qty || 1),
+          'Total orden':   order.total || 0,
         });
       });
     });
     rows.sort((a, b) => a.TCG.localeCompare(b.TCG) || a.Edición.localeCompare(b.Edición));
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [14, 20, 10, 12, 30, 12, 10, 16, 22, 12].map(w => ({ wch: w }));
+    ws['!cols'] = [16, 12, 12, 22, 26, 14, 18, 16, 14, 20, 30, 12, 12, 10, 10, 14, 14, 14].map(w => ({ wch: w }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Pedidos');
     XLSX.writeFile(wb, `pedidos_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -192,10 +361,13 @@ export function AdminOrders() {
 
   async function doUpdateStatus(orderId, newStatus, trackingNumber) {
     try {
-      await api.admin.orders.updateStatus(orderId, newStatus);
+      await api.admin.orders.updateStatus(orderId, newStatus, trackingNumber ? { trackingNumber } : {});
       setOrders(prev => prev.map(o =>
         o.id === orderId ? { ...o, status: newStatus, ...(trackingNumber ? { trackingNumber } : {}) } : o
       ));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(prev => ({ ...prev, status: newStatus, ...(trackingNumber ? { trackingNumber } : {}) }));
+      }
       showToast(`Orden ${orderId} → ${STATUS_CONFIG[newStatus]?.label}${trackingNumber ? ' · ' + trackingNumber : ''}`);
     } catch (ex) {
       showToast(ex.error || 'Error al actualizar', 'error');
@@ -210,16 +382,16 @@ export function AdminOrders() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
         {[
-          { id: 'total',    label: 'Total órdenes',  icon: 'receipt_long',    color: 'text-violet-400', bg: 'bg-violet-600/15', val: orders.length },
-          { id: 'pending',  label: 'Pendientes',     icon: 'hourglass_empty', color: 'text-orange-400', bg: 'bg-orange-500/15', val: counts.pending || 0 },
-          { id: 'shipped',  label: 'En envío',       icon: 'local_shipping',  color: 'text-blue-400',   bg: 'bg-blue-500/15',   val: counts.shipped || 0 },
-          { id: 'delivered',label: 'Entregadas',     icon: 'check_circle',    color: 'text-green-400',  bg: 'bg-green-500/15',  val: counts.delivered || 0 },
+          { label: 'Facturado',    icon: 'payments',        color: 'text-violet-400', bg: 'bg-violet-600/15', val: formatCLP(revenue) },
+          { label: 'Pendientes',   icon: 'hourglass_empty', color: 'text-orange-400', bg: 'bg-orange-500/15', val: counts.pending   || 0 },
+          { label: 'Confirmadas',  icon: 'check',           color: 'text-blue-400',   bg: 'bg-blue-500/15',   val: counts.confirmed || 0 },
+          { label: 'En envío',     icon: 'local_shipping',  color: 'text-indigo-400', bg: 'bg-indigo-500/15', val: counts.shipped   || 0 },
         ].map(s => (
-          <div key={s.id} className="bg-white/5 border border-white/10 rounded-2xl p-6">
+          <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl p-6">
             <div className={`w-11 h-11 ${s.bg} rounded-xl flex items-center justify-center mb-4`}>
               <span className={`material-symbols-outlined ${s.color} text-xl`}>{s.icon}</span>
             </div>
-            <p className="text-3xl font-black text-white">{loading ? '—' : s.val.toLocaleString('es-CL')}</p>
+            <p className="text-3xl font-black text-white truncate">{loading ? '—' : s.val.toLocaleString?.('es-CL') ?? s.val}</p>
             <p className="text-sm text-gray-400 mt-1">{s.label}</p>
           </div>
         ))}
@@ -264,10 +436,10 @@ export function AdminOrders() {
           {/* Status tabs */}
           <div className="flex gap-2 flex-wrap">
             {STATUS_TABS.map(s => {
-              const cfg = STATUS_CONFIG[s];
+              const cfg      = STATUS_CONFIG[s];
               const isActive = statusFilter === s;
-              const label = s ? cfg?.label : 'Todas';
-              const count = s ? counts[s] : orders.length;
+              const label    = s ? cfg?.label : 'Todas';
+              const count    = s ? counts[s] : orders.length;
               return (
                 <button key={s}
                   onClick={() => { setStatusFilter(s); setPage(1); }}
@@ -291,8 +463,7 @@ export function AdminOrders() {
           <table className="w-full">
             <thead className="bg-white/[0.03]">
               <tr className="text-left">
-                <th className="px-4 py-3 w-8" />
-                {['# Orden', 'Cliente', 'Fecha', 'Items', 'Total', 'Estado', 'Cambiar a'].map(h => (
+                {['# Orden', 'Cliente', 'Fecha', 'Envío', 'Items', 'Total', 'Estado', 'Cambiar a'].map(h => (
                   <th key={h} className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -315,21 +486,16 @@ export function AdminOrders() {
                 </tr>
               )}
               {!loading && pageSlice.map(order => {
-                const s = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-                const customer = [order.shipping?.firstName, order.shipping?.lastName].filter(Boolean).join(' ') || order.shipping?.email || '—';
+                const s            = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+                const customer     = [order.shipping?.firstName, order.shipping?.lastName].filter(Boolean).join(' ') || order.shipping?.email || '—';
                 const nextStatuses = NEXT_STATUSES[order.status] || [];
-                const isExpanded = expandedId === order.id;
-                return [
+                const retiro       = isRetiroOrder(order);
+                return (
                   <tr
                     key={order.id}
                     className="hover:bg-white/[0.03] transition-colors cursor-pointer"
-                    onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                    onClick={() => setSelectedOrder(order)}
                   >
-                    <td className="px-4 py-4 text-center">
-                      <span className={`material-symbols-outlined text-sm transition-colors ${isExpanded ? 'text-violet-400' : 'text-gray-600'}`}>
-                        {isExpanded ? 'expand_more' : 'chevron_right'}
-                      </span>
-                    </td>
                     <td className="px-4 py-4">
                       <p className="font-bold text-sm text-white font-mono">{order.id}</p>
                       <p className="text-xs text-gray-500">{order.paymentMethod || '—'}</p>
@@ -339,7 +505,15 @@ export function AdminOrders() {
                       <p className="text-xs text-gray-500">{order.shipping?.email || '—'}</p>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-400">
-                      {order.date ? new Date(order.date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      {order.date
+                        ? new Date(order.date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${retiro ? 'bg-orange-500/15 text-orange-400' : 'bg-blue-500/15 text-blue-400'}`}>
+                        <span className="material-symbols-outlined text-xs">{retiro ? 'storefront' : 'local_shipping'}</span>
+                        {retiro ? 'Retiro' : 'Despacho'}
+                      </span>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-400">{order.items?.length ?? '—'}</td>
                     <td className="px-4 py-4 font-black text-violet-400 text-sm">{formatCLP(order.total || 0)}</td>
@@ -365,9 +539,8 @@ export function AdminOrders() {
                         <span className="text-xs text-gray-600">Final</span>
                       )}
                     </td>
-                  </tr>,
-                  isExpanded && <OrderDetailRow key={`${order.id}-detail`} order={order} />,
-                ];
+                  </tr>
+                );
               })}
             </tbody>
           </table>
@@ -396,6 +569,15 @@ export function AdminOrders() {
           )}
         </div>
       </div>
+
+      {/* Order detail modal */}
+      {selectedOrder && (
+        <OrderModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onStatusChange={(id, status) => handleStatusChange(id, status)}
+        />
+      )}
 
       {/* Shipping number modal */}
       {shippingModal && (
