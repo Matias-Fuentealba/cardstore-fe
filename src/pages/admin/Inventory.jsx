@@ -51,7 +51,7 @@ function StockModal({ item, onSave, onClose }) {
           <div>
             <label className="block text-sm font-semibold text-gray-300 mb-1.5">Condición</label>
             <select value={cond} onChange={e => setCond(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm">
+              className="w-full px-4 py-2.5 bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm">
               <option value="nm">NM — Near Mint</option>
               <option value="lp">LP — Lightly Played</option>
               <option value="mp">MP — Moderately Played</option>
@@ -61,7 +61,7 @@ function StockModal({ item, onSave, onClose }) {
           <div>
             <label className="block text-sm font-semibold text-gray-300 mb-1.5">Idioma</label>
             <select value={lang} onChange={e => setLang(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm">
+              className="w-full px-4 py-2.5 bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm">
               <option value="en">Inglés (EN)</option>
               <option value="es">Español (ES)</option>
               <option value="jp">Japonés (JP)</option>
@@ -376,7 +376,7 @@ export function AdminInventory() {
               { val: filterLang,  setter: setFilterLang, options: [['','Todos los idiomas'],['en','Inglés (EN)'],['es','Español (ES)'],['jp','Japonés (JP)'],['pt','Portugués (PT)']] },
             ].map((f, i) => (
               <select key={i} value={f.val} onChange={e => { f.setter(e.target.value); setPage(1); }}
-                className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
+                className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
                 {f.options.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
               </select>
             ))}

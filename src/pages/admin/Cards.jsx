@@ -103,7 +103,7 @@ function EditModal({ card, onSave, onClose }) {
           <div>
             <label className="block text-sm font-semibold text-gray-300 mb-1.5">Idioma</label>
             <select value={lang} onChange={e => setLang(e.target.value)}
-              className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm">
+              className="w-full px-3 py-2.5 bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 transition-colors text-sm">
               {[['en','Inglés'],['es','Español'],['jp','Japonés'],['pt','Portugués'],['fr','Francés'],['de','Alemán'],['ko','Coreano']].map(([v, l]) => (
                 <option key={v} value={v}>{l}</option>
               ))}
@@ -386,6 +386,7 @@ export function AdminCards() {
   async function activateAllVisible() {
     const inactive = tableCards.filter(c => !c.active);
     if (!inactive.length) { showToast('Todas las cartas visibles ya están activas'); return; }
+    if (!confirm(`¿Activar las ${inactive.length} carta${inactive.length !== 1 ? 's' : ''} inactivas visibles?`)) return;
     await Promise.all(inactive.map(c => api.admin.cards.setActive(c.id, true).catch(() => {})));
     setTableCards(prev => prev.map(c => ({ ...c, active: true })));
     showToast(`${inactive.length} cartas activadas`);
@@ -594,12 +595,12 @@ export function AdminCards() {
               { val: filterRarity, setter: setFilterRarity, options: [['','Todas las rarezas'],['Common','Common'],['Uncommon','Uncommon'],['Rare','Rare'],['Ultra Rare','Ultra Rare'],['Secret Rare','Secret Rare']] },
             ].map((f, i) => (
               <select key={i} value={f.val} onChange={e => { f.setter(e.target.value); handleTableFilter(); }}
-                className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
+                className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
                 {f.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             ))}
             <button onClick={activateAllVisible}
-              className="flex items-center gap-2 px-3 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-sm font-semibold rounded-xl transition border border-green-500/20">
+              className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-semibold rounded-xl transition border border-white/10">
               <span className="material-symbols-outlined text-base">toggle_on</span>
               Activar todo
             </button>

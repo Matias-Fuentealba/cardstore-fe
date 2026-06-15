@@ -208,7 +208,7 @@ function OrderModal({ order, onClose, onStatusChange }) {
             <select
               defaultValue=""
               onChange={e => { if (e.target.value) onStatusChange(order.id, e.target.value); }}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-300 focus:outline-none focus:border-violet-500 transition-colors"
+              className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-300 focus:outline-none focus:border-violet-500 transition-colors"
             >
               <option value="">— Mover a —</option>
               {nextStatuses.map(ns => (
@@ -530,7 +530,7 @@ export function AdminOrders() {
                         <select
                           defaultValue=""
                           onChange={e => handleStatusChange(order.id, e.target.value)}
-                          className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-300 focus:outline-none focus:border-violet-500 transition-colors"
+                          className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-300 focus:outline-none focus:border-violet-500 transition-colors"
                         >
                           <option value="">— Mover a —</option>
                           {nextStatuses.map(ns => (
