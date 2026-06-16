@@ -146,6 +146,11 @@ export const api = {
     getStatus: (tokenTrx) => GET(`/payments/${tokenTrx}`),
   },
 
+  mpPayments: {
+    start: (payload) => POST('/mp-payments/start', payload),
+    getStatus: (tokenTrx) => GET(`/mp-payments/${tokenTrx}`),
+  },
+
   user: {
     me: () => GET('/users/me'),
     update: (data) => PATCH('/users/me', data),

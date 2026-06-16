@@ -218,6 +218,37 @@ export function Checkout() {
     setConfirming(true);
     try {
 
+      // ── Mercado Pago: crear orden, crear preferencia y redirigir al checkout ──
+      if (payMethod === 'mercadopago') {
+        const orderRes = await api.orders.create({
+          shipping: {
+            firstName: form.nombre,
+            lastName:  form.apellido,
+            email:     form.email,
+            phone:     form.tel,
+            address:   form.address,
+            region:    form.region,
+            city:      comunaInput,
+            communeId: comunaId,
+            zipCode:   form.cp,
+          },
+          paymentMethod:  'mercadopago',
+          shippingMethod: selectedQuote?.tipoEntrega || 'standard',
+          shippingCost:   selectedQuote?.costoTotal ?? 0,
+        });
+        const mpRes = await api.mpPayments.start({
+          orderId:       orderRes.orderId,
+          amount:        grandTotal,
+          customerName:  `${form.nombre} ${form.apellido}`.trim(),
+          customerEmail: form.email,
+          customerPhone: form.tel || undefined,
+          urlSuccess: `${window.location.origin}/pago/exito`,
+          urlError:   `${window.location.origin}/pago/error`,
+        });
+        window.location.href = mpRes.checkoutUrl;
+        return;
+      }
+
       // ── WebPay: crear orden primero, luego iniciar pago en Transbank ─────────
       if (payMethod === 'webpay') {
         const orderRes = await api.orders.create({
@@ -576,8 +607,8 @@ export function Checkout() {
                         ? <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>
                         : <span className="material-symbols-outlined">lock</span>}
                       {confirming
-                        ? (payMethod === 'webpay' ? 'Conectando con WebPay…' : 'Procesando…')
-                        : (payMethod === 'webpay' ? 'Pagar con WebPay' : 'Confirmar pedido')}
+                        ? (payMethod === 'webpay' ? 'Conectando con WebPay…' : payMethod === 'mercadopago' ? 'Conectando con Mercado Pago…' : 'Procesando…')
+                        : (payMethod === 'webpay' ? 'Pagar con WebPay' : payMethod === 'mercadopago' ? 'Pagar con Mercado Pago' : 'Confirmar pedido')}
                     </button>
                   </div>
                 </div>

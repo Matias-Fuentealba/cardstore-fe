@@ -38,6 +38,7 @@ function DetailRow({ label, value, accent = false }) {
 export function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const tokenTrx = searchParams.get('tokenTrx');
+  const provider  = searchParams.get('provider') ?? 'transbank';
   const refreshCart = useCartStore(s => s.refresh);
 
   const [payment, setPayment] = useState(null);
@@ -50,7 +51,11 @@ export function PaymentSuccess() {
       setLoading(false);
       return;
     }
-    api.payments.getStatus(tokenTrx)
+    const fetchStatus = provider === 'mercadopago'
+      ? api.mpPayments.getStatus(tokenTrx)
+      : api.payments.getStatus(tokenTrx);
+
+    fetchStatus
       .then(data => {
         setPayment(data);
         setLoading(false);
@@ -58,7 +63,7 @@ export function PaymentSuccess() {
         refreshCart();
       })
       .catch(() => { setError('No se pudo obtener el resultado del pago.'); setLoading(false); });
-  }, [tokenTrx]);
+  }, [tokenTrx, provider]);
 
   return (
     <>
@@ -96,7 +101,7 @@ export function PaymentSuccess() {
                 <span className="material-symbols-outlined text-yellow-400 text-4xl">warning</span>
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">Pago no confirmado</h2>
-              <p className="text-gray-400 mb-2">El pago no fue confirmado por Transbank.</p>
+              <p className="text-gray-400 mb-2">El pago no pudo ser confirmado.</p>
               <p className="text-sm text-gray-500 mb-8">Estado: <span className="font-semibold text-yellow-400">{payment.status}</span></p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link to="/cart" className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition-colors inline-flex items-center justify-center gap-2">
@@ -123,21 +128,43 @@ export function PaymentSuccess() {
                   <DetailRow label="Número de pedido" value={`#${payment.orderId}`} accent />
                 )}
                 <DetailRow label="Monto pagado" value={formatCLP(payment.amount)} accent />
-                {payment.tbkAuthorizationCode && (
-                  <DetailRow label="Código autorización" value={payment.tbkAuthorizationCode} />
+
+                {/* Detalles Transbank */}
+                {payment.provider !== 'mercadopago' && (
+                  <>
+                    {payment.tbkAuthorizationCode && (
+                      <DetailRow label="Código autorización" value={payment.tbkAuthorizationCode} />
+                    )}
+                    {payment.tbkCardNumber && (
+                      <DetailRow label="Tarjeta" value={`**** **** **** ${payment.tbkCardNumber}`} />
+                    )}
+                    {payment.tbkPaymentTypeCode && (
+                      <DetailRow label="Tipo de pago" value={payment.tbkPaymentTypeCode} />
+                    )}
+                    {payment.tbkTransactionDate && (
+                      <DetailRow
+                        label="Fecha"
+                        value={new Date(payment.tbkTransactionDate).toLocaleString('es-CL')}
+                      />
+                    )}
+                  </>
                 )}
-                {payment.tbkCardNumber && (
-                  <DetailRow label="Tarjeta" value={`**** **** **** ${payment.tbkCardNumber}`} />
+
+                {/* Detalles Mercado Pago */}
+                {payment.provider === 'mercadopago' && (
+                  <>
+                    {payment.mpPaymentId && (
+                      <DetailRow label="ID de pago" value={payment.mpPaymentId} />
+                    )}
+                    {payment.mpPaymentMethodId && (
+                      <DetailRow label="Método de pago" value={payment.mpPaymentMethodId} />
+                    )}
+                    {payment.mpPaymentTypeId && (
+                      <DetailRow label="Tipo" value={payment.mpPaymentTypeId} />
+                    )}
+                  </>
                 )}
-                {payment.tbkPaymentTypeCode && (
-                  <DetailRow label="Tipo de pago" value={payment.tbkPaymentTypeCode} />
-                )}
-                {payment.tbkTransactionDate && (
-                  <DetailRow
-                    label="Fecha"
-                    value={new Date(payment.tbkTransactionDate).toLocaleString('es-CL')}
-                  />
-                )}
+
                 <DetailRow label="Cliente" value={payment.customerName} />
                 <DetailRow label="Email" value={payment.customerEmail} />
               </div>
