@@ -41,6 +41,22 @@ function StepBar({ current }) {
   );
 }
 
+// ─── RUT validator ────────────────────────────────────────────────────────────
+function validarRut(rut) {
+  const clean = rut.replace(/[.\-\s]/g, '').toUpperCase();
+  if (!/^\d{7,8}[0-9K]$/.test(clean)) return false;
+  const body = clean.slice(0, -1);
+  const dv   = clean.slice(-1);
+  let sum = 0, mul = 2;
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i]) * mul;
+    mul = mul === 7 ? 2 : mul + 1;
+  }
+  const res = 11 - (sum % 11);
+  const expected = res === 11 ? '0' : res === 10 ? 'K' : String(res);
+  return dv === expected;
+}
+
 // ─── Form input ───────────────────────────────────────────────────────────────
 function FormInput({ label, type = 'text', value, onChange, placeholder, error, ...rest }) {
   return (
@@ -55,6 +71,7 @@ function FormInput({ label, type = 'text', value, onChange, placeholder, error, 
           ${error ? 'border-red-500 focus:border-red-500' : 'border-white/10 focus:border-violet-500'}`}
         {...rest}
       />
+      {error && <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-xs">error</span>{error}</p>}
     </div>
   );
 }
@@ -136,13 +153,16 @@ export function Checkout() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quotes,       setQuotes]       = useState([]);
   const [selectedQuote, setSelectedQuote] = useState(null);
-  const [shippingError, setShippingError] = useState('');
+  const [errors, setErrors] = useState({});
   const comunaDebounceRef = useRef(null);
 
   // Step 2 — payment
   const [payMethod, setPayMethod] = useState('webpay');
 
-  const setField = (key) => (val) => setForm(f => ({ ...f, [key]: val }));
+  const setField = (key) => (val) => {
+    setForm(f => ({ ...f, [key]: val }));
+    if (errors[key]) setErrors(e => ({ ...e, [key]: '' }));
+  };
 
   // Load cart + prefill
   useEffect(() => {
@@ -180,7 +200,7 @@ export function Checkout() {
     setComunaInput(c.nombre);
     setComunaDropdown([]);
     setDropdownOpen(false);
-    // Auto-fill region if empty
+    if (errors.comuna) setErrors(e => ({ ...e, comuna: '' }));
     if (!form.region && c.ciudad?.nombre) {
       setForm(f => ({ ...f, region: c.ciudad.nombre }));
     }
@@ -205,11 +225,42 @@ export function Checkout() {
   };
 
   const goToStep2 = () => {
-    const required = ['nombre', 'apellido', 'email', 'rut', 'address', 'cp'];
-    const missing = required.some(k => !form[k].trim());
-    if (missing || !comunaId) { setShippingError('Completa todos los campos obligatorios.'); return; }
-    if (!selectedQuote) { setShippingError('Selecciona un método de envío.'); return; }
-    setShippingError('');
+    const errs = {};
+
+    if (!form.nombre.trim())   errs.nombre   = 'Campo requerido';
+    if (!form.apellido.trim()) errs.apellido = 'Campo requerido';
+
+    if (!form.email.trim()) {
+      errs.email = 'Campo requerido';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errs.email = 'Email inválido';
+    }
+
+    if (form.tel.trim() && !/^(\+?56)?[\s-]?9[\s-]?\d{4}[\s-]?\d{4}$/.test(form.tel.replace(/\s/g, ''))) {
+      errs.tel = 'Teléfono inválido (ej: +56 9 1234 5678)';
+    }
+
+    if (!form.rut.trim()) {
+      errs.rut = 'Campo requerido';
+    } else if (!validarRut(form.rut)) {
+      errs.rut = 'RUT inválido';
+    }
+
+    if (!form.address.trim()) errs.address = 'Campo requerido';
+
+    if (!comunaId) errs.comuna = 'Selecciona una comuna válida';
+
+    if (!form.cp.trim()) {
+      errs.cp = 'Campo requerido';
+    } else if (!/^\d{7}$/.test(form.cp.replace(/\s/g, ''))) {
+      errs.cp = 'Debe tener 7 dígitos';
+    }
+
+    if (!selectedQuote) errs.shipping = 'Selecciona un método de envío';
+
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+
+    setErrors({});
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -372,13 +423,13 @@ export function Checkout() {
                   </h2>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <FormInput label="Nombre *"     value={form.nombre}   onChange={setField('nombre')}   placeholder="Juan" />
-                    <FormInput label="Apellido *"   value={form.apellido} onChange={setField('apellido')} placeholder="García" />
-                    <FormInput label="Email *"      type="email" value={form.email} onChange={setField('email')} placeholder="juan@email.com" />
-                    <FormInput label="Teléfono"     type="tel"   value={form.tel}   onChange={setField('tel')}   placeholder="+56 9 0000 0000" />
-                    <FormInput label="RUT *"         value={form.rut}   onChange={setField('rut')}   placeholder="12.345.678-9" />
+                    <FormInput label="Nombre *"   value={form.nombre}   onChange={setField('nombre')}   placeholder="Juan"            error={errors.nombre} />
+                    <FormInput label="Apellido *" value={form.apellido} onChange={setField('apellido')} placeholder="García"           error={errors.apellido} />
+                    <FormInput label="Email *"    type="email" value={form.email} onChange={setField('email')} placeholder="juan@email.com"  error={errors.email} />
+                    <FormInput label="Teléfono"   type="tel"   value={form.tel}   onChange={setField('tel')}   placeholder="+56 9 0000 0000" error={errors.tel} />
+                    <FormInput label="RUT *"      value={form.rut}     onChange={setField('rut')}     placeholder="12.345.678-9"       error={errors.rut} />
                     <div className="sm:col-span-2">
-                      <FormInput label="Dirección *" value={form.address} onChange={setField('address')} placeholder="Calle, número, piso/depto" />
+                      <FormInput label="Dirección *" value={form.address} onChange={setField('address')} placeholder="Calle, número, piso/depto" error={errors.address} />
                     </div>
                     <FormInput label="Región" value={form.region} onChange={setField('region')} placeholder="Región" />
 
@@ -395,6 +446,7 @@ export function Checkout() {
                         className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none transition-colors
                           ${!comunaId && shippingError ? 'border-red-500' : 'border-white/10 focus:border-violet-500'}`}
                       />
+                      {errors.comuna && <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-xs">error</span>{errors.comuna}</p>}
                       {dropdownOpen && comunaDropdown.length > 0 && (
                         <ul className="absolute z-50 w-full bg-[#1a1a2e] border border-white/10 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto text-sm">
                           {comunaDropdown.map(c => (
@@ -411,7 +463,7 @@ export function Checkout() {
                       )}
                     </div>
 
-                    <FormInput label="Código postal *" value={form.cp} onChange={setField('cp')} placeholder="1234567" />
+                    <FormInput label="Código postal *" value={form.cp} onChange={setField('cp')} placeholder="1234567" error={errors.cp} />
                   </div>
 
                   {/* Shipping quote */}
@@ -485,10 +537,10 @@ export function Checkout() {
                     </div>
                   )}
 
-                  {shippingError && (
+                  {errors.shipping && (
                     <p className="text-sm text-red-400 mt-3 flex items-center gap-1">
                       <span className="material-symbols-outlined text-base">error</span>
-                      {shippingError}
+                      {errors.shipping}
                     </p>
                   )}
 
