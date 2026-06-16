@@ -426,8 +426,8 @@ export function Checkout() {
                     <FormInput label="Nombre *"   value={form.nombre}   onChange={setField('nombre')}   placeholder="Juan"            error={errors.nombre} />
                     <FormInput label="Apellido *" value={form.apellido} onChange={setField('apellido')} placeholder="García"           error={errors.apellido} />
                     <FormInput label="Email *"    type="email" value={form.email} onChange={setField('email')} placeholder="juan@email.com"  error={errors.email} />
-                    <FormInput label="Teléfono"   type="tel"   value={form.tel}   onChange={setField('tel')}   placeholder="+56 9 0000 0000" error={errors.tel} />
-                    <FormInput label="RUT *"      value={form.rut}     onChange={setField('rut')}     placeholder="12.345.678-9"       error={errors.rut} />
+                    <FormInput label="Teléfono"   type="tel"   value={form.tel}   onChange={v => setField('tel')(v.replace(/[^\d\s+\-]/g, ''))}   placeholder="+56 9 0000 0000" error={errors.tel} />
+                    <FormInput label="RUT *"      value={form.rut}     onChange={v => setField('rut')(v.replace(/[^\d.\-kK]/g, ''))}     placeholder="12.345.678-9"       error={errors.rut} />
                     <div className="sm:col-span-2">
                       <FormInput label="Dirección *" value={form.address} onChange={setField('address')} placeholder="Calle, número, piso/depto" error={errors.address} />
                     </div>
@@ -463,7 +463,7 @@ export function Checkout() {
                       )}
                     </div>
 
-                    <FormInput label="Código postal *" value={form.cp} onChange={setField('cp')} placeholder="1234567" error={errors.cp} />
+                    <FormInput label="Código postal *" value={form.cp} onChange={v => setField('cp')(v.replace(/\D/g, ''))} placeholder="1234567" error={errors.cp} />
                   </div>
 
                   {/* Shipping quote */}
