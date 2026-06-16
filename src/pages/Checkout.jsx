@@ -444,7 +444,7 @@ export function Checkout() {
                         placeholder="Escribe tu comuna…"
                         autoComplete="off"
                         className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none transition-colors
-                          ${!comunaId && shippingError ? 'border-red-500' : 'border-white/10 focus:border-violet-500'}`}
+                          ${errors.comuna ? 'border-red-500 focus:border-red-500' : 'border-white/10 focus:border-violet-500'}`}
                       />
                       {errors.comuna && <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-xs">error</span>{errors.comuna}</p>}
                       {dropdownOpen && comunaDropdown.length > 0 && (
@@ -494,7 +494,7 @@ export function Checkout() {
                       return (
                         <label className="block cursor-pointer">
                           <input type="radio" name="shipping-method" className="hidden"
-                            onChange={() => { setSelectedQuote(retiro); setShippingError(''); }} />
+                            onChange={() => { setSelectedQuote(retiro); setErrors(e => ({ ...e, shipping: '' })); }} />
                           <div className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all
                             ${sel ? 'border-violet-600 bg-violet-600/10' : 'border-white/10 hover:border-violet-500/50'}`}>
                             <span className="material-symbols-outlined text-violet-400">storefront</span>
@@ -519,7 +519,7 @@ export function Checkout() {
                         return (
                           <label key={i} className="block cursor-pointer">
                             <input type="radio" name="shipping-method" className="hidden"
-                              onChange={() => { setSelectedQuote(r); setShippingError(''); }} />
+                              onChange={() => { setSelectedQuote(r); setErrors(e => ({ ...e, shipping: '' })); }} />
                             <div className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all
                               ${sel ? 'border-violet-600 bg-violet-600/10' : 'border-white/10 hover:border-violet-500/50'}`}>
                               <span className="material-symbols-outlined text-violet-400">
