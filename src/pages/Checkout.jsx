@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, formatCLP, Auth, COND_LABELS } from '../api';
+import { searchComunas } from '../data/comunas';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { showToast } from '../components/ui/Toast';
@@ -154,7 +155,7 @@ export function Checkout() {
   const [quotes,       setQuotes]       = useState([]);
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [errors, setErrors] = useState({});
-  const comunaDebounceRef = useRef(null);
+
 
   // Step 2 — payment
   const [payMethod, setPayMethod] = useState('webpay');
@@ -189,15 +190,10 @@ export function Checkout() {
     setComunaId(null);
     setSelectedQuote(null);
     setQuotes([]);
-    clearTimeout(comunaDebounceRef.current);
-    if (val.length < 2) { setDropdownOpen(false); return; }
-    comunaDebounceRef.current = setTimeout(async () => {
-      try {
-        const res = await api.shipping.communes(val);
-        setComunaDropdown(res.communes || res.data || []);
-        setDropdownOpen(true);
-      } catch { setComunaDropdown([]); }
-    }, 300);
+    if (val.length < 2) { setDropdownOpen(false); setComunaDropdown([]); return; }
+    const results = searchComunas(val);
+    setComunaDropdown(results);
+    setDropdownOpen(results.length > 0);
   };
 
   const selectComuna = (c) => {

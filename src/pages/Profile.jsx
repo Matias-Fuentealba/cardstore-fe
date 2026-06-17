@@ -1,8 +1,29 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, formatCLP, Auth, COND_LABELS } from '../api';
+import { searchComunas } from '../data/comunas';
 import { useAuthStore } from '../store/authStore';
 import { showToast } from '../components/ui/Toast';
+
+// ─── Chile regions ────────────────────────────────────────────────────────────
+const CHILE_REGIONS = [
+  'Región de Arica y Parinacota',
+  'Región de Tarapacá',
+  'Región de Antofagasta',
+  'Región de Atacama',
+  'Región de Coquimbo',
+  'Región de Valparaíso',
+  'Región Metropolitana de Santiago',
+  "Región del Libertador General Bernardo O'Higgins",
+  'Región del Maule',
+  'Región de Ñuble',
+  'Región del Biobío',
+  'Región de La Araucanía',
+  'Región de Los Ríos',
+  'Región de Los Lagos',
+  'Región de Aysén del General Carlos Ibáñez del Campo',
+  'Región de Magallanes y de la Antártica Chilena',
+];
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STATUS_LABEL = {
@@ -255,22 +276,47 @@ function PanelDatos({ user, onSave }) {
   const [saving, setSaving] = useState(false);
   const setField = k => v => setForm(f => ({ ...f, [k]: v }));
 
+  // Comuna search
+  const [comunaInput,    setComunaInput]    = useState('');
+  const [comunaDropdown, setComunaDropdown] = useState([]);
+  const [dropdownOpen,   setDropdownOpen]   = useState(false);
+
   useEffect(() => {
-    if (user) setForm({
-      firstName: user.firstName || '',
-      lastName:  user.lastName  || '',
-      email:     user.email     || '',
-      phone:     user.phone     || '',
-      birthDate: user.birthDate ? user.birthDate.slice(0, 10) : '',
-      rut:       user.rut       || '',
-      address:   user.address   || '',
-      region:    user.region    || '',
-      city:      user.city      || '',
-      cp:        user.cp        || '',
-    });
+    if (user) {
+      setForm({
+        firstName: user.firstName || '',
+        lastName:  user.lastName  || '',
+        email:     user.email     || '',
+        phone:     user.phone     || '',
+        birthDate: user.birthDate ? user.birthDate.slice(0, 10) : '',
+        rut:       user.rut       || '',
+        address:   user.address   || '',
+        region:    user.region    || '',
+        city:      user.city      || '',
+        cp:        user.cp        || '',
+      });
+      if (user.city) setComunaInput(user.city);
+    }
   }, [user]);
 
-  const initials = [user?.firstName?.[0], user?.lastName?.[0]].filter(Boolean).join('').toUpperCase() || '?';
+  const handleComunaInput = (val) => {
+    setComunaInput(val);
+    setField('city')(val);
+    if (val.length < 2) { setDropdownOpen(false); setComunaDropdown([]); return; }
+    try {
+        const results = searchComunas(val);
+        setComunaDropdown(results);
+        setDropdownOpen(results.length > 0);
+    } catch { setComunaDropdown([]); }
+  };
+
+  const selectComuna = (c) => {
+    setComunaInput(c.nombre);
+    setField('city')(c.nombre);
+    setComunaDropdown([]);
+    setDropdownOpen(false);
+    if (c.ciudad?.nombre) setField('region')(c.ciudad.nombre);
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -289,7 +335,6 @@ function PanelDatos({ user, onSave }) {
   return (
     <div className="space-y-5">
       <h2 className="text-2xl font-bold text-white">Mis datos</h2>
-      {/* Form */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
         <h3 className="font-bold text-white mb-5 flex items-center gap-2">
           <span className="material-symbols-outlined text-violet-400">person</span>
@@ -315,15 +360,52 @@ function PanelDatos({ user, onSave }) {
           <div className="sm:col-span-2">
             <FInput label="Dirección" value={form.address} onChange={setField('address')} placeholder="Calle, número, piso/depto" />
           </div>
-          <FInput label="Ciudad / Comuna" value={form.city}   onChange={setField('city')}   placeholder="Santiago" />
-          <FInput label="Región"          value={form.region} onChange={setField('region')} placeholder="Región Metropolitana" />
-          <FInput label="Código postal"   value={form.cp}     onChange={v => setField('cp')(v.replace(/\D/g, ''))} placeholder="1234567" />
+
+          {/* Comuna search */}
+          <div className="relative">
+            <label className="block text-sm font-semibold text-gray-300 mb-1.5">Ciudad / Comuna</label>
+            <input
+              type="text"
+              value={comunaInput}
+              onChange={e => handleComunaInput(e.target.value)}
+              onFocus={() => comunaDropdown.length > 0 && setDropdownOpen(true)}
+              placeholder="Escribe tu comuna…"
+              autoComplete="off"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+            />
+            {dropdownOpen && comunaDropdown.length > 0 && (
+              <ul className="absolute z-50 w-full bg-[#1a1a2e] border border-white/10 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto text-sm">
+                {comunaDropdown.map(c => (
+                  <li key={c.id} onMouseDown={() => selectComuna(c)}
+                    className="px-4 py-2.5 cursor-pointer hover:bg-violet-600/10 hover:text-violet-400 transition-colors flex items-center justify-between"
+                  >
+                    <span className="font-medium">{c.nombre}</span>
+                    <span className="text-xs text-gray-400">{c.ciudad?.nombre || ''}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Región select */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-1.5">Región</label>
+            <select
+              value={form.region}
+              onChange={e => setField('region')(e.target.value)}
+              className="w-full px-4 py-3 bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
+            >
+              <option value="">Selecciona una región</option>
+              {CHILE_REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          <FInput label="Código postal" value={form.cp} onChange={v => setField('cp')(v.replace(/\D/g, ''))} placeholder="1234567" />
         </div>
+
         <div className="flex justify-end mt-6 gap-3">
           <button type="button" className="px-5 py-2.5 text-sm font-bold text-gray-400 hover:text-violet-400 transition-colors">Cancelar</button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
+          <button onClick={handleSave} disabled={saving}
             className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2"
           >
             {saving ? <span className="material-symbols-outlined animate-spin text-base">progress_activity</span> : <span className="material-symbols-outlined text-base">save</span>}
