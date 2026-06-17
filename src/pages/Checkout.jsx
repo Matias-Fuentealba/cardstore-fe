@@ -614,11 +614,7 @@ export function Checkout() {
                         <span className="text-blue-400 font-black text-lg">MP</span>
                       </div>
                       <h3 className="font-bold text-white mb-2">Pagar con Mercado Pago</h3>
-                      <p className="text-gray-400 text-sm mb-6 max-w-xs mx-auto">Serás redirigido a Mercado Pago para completar el pago de forma segura.</p>
-                      <div className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-400 text-slate-900 font-bold rounded-xl cursor-pointer">
-                        <span className="material-symbols-outlined text-sm">open_in_new</span>
-                        Continuar con Mercado Pago
-                      </div>
+                      <p className="text-gray-400 text-sm max-w-xs mx-auto">Serás redirigido a Mercado Pago para completar el pago de forma segura.</p>
                     </div>
                   )}
 

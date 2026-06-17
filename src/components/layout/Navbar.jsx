@@ -25,9 +25,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 mr-4">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
-            <span className="material-symbols-outlined text-white text-sm">playing_cards</span>
-          </div>
+          <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-8 w-8 rounded-lg object-cover" />
           <span className="font-bold text-white hidden sm:block">La Tech TCG</span>
         </Link>
 

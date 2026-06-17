@@ -191,7 +191,7 @@ export function Home() {
           {GAME_CATEGORIES.map(g => (
             <Link
               key={g.id}
-              to={`/singles?game=${g.id}`}
+              to={`/singles/${g.id}`}
               className="group relative block aspect-[16/10] overflow-hidden rounded-2xl hover:shadow-2xl hover:-translate-y-1 transition-all"
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10" />
@@ -328,9 +328,7 @@ export function Home() {
 
           <div>
             <div className="flex items-center gap-2 mb-6">
-              <div className="bg-violet-600 text-white p-1 rounded-lg">
-                <span className="material-symbols-outlined block text-xl">layers</span>
-              </div>
+              <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-8 w-8 rounded-lg object-cover" />
               <span className="text-xl font-bold tracking-tight">La Tech TCG</span>
             </div>
             <p className="text-gray-500 text-sm leading-relaxed mb-6">
