@@ -1,30 +1,31 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
+import optcgImg  from '../assets/optcg.webp';
+import ptcgImg   from '../assets/ptcg.webp';
+import rbtcgImg  from '../assets/rbtcg.jpg';
 
-const GAME_STYLES = {
-  'pokemon':    { gradient: 'from-yellow-500 to-orange-500', icon: 'catching_pokemon', bg: 'bg-yellow-500/10' },
-  'yugioh':     { gradient: 'from-indigo-500 to-purple-600', icon: 'auto_awesome',     bg: 'bg-indigo-500/10' },
-  'yu-gi-oh':   { gradient: 'from-indigo-500 to-purple-600', icon: 'auto_awesome',     bg: 'bg-indigo-500/10' },
-  'magic':      { gradient: 'from-emerald-500 to-teal-600',  icon: 'stars',            bg: 'bg-emerald-500/10' },
-  'lorcana':    { gradient: 'from-blue-500 to-cyan-500',     icon: 'music_note',       bg: 'bg-blue-500/10' },
-  'onepiece':   { gradient: 'from-red-500 to-rose-600',      icon: 'sailing',          bg: 'bg-red-500/10' },
-  'one-piece':  { gradient: 'from-red-500 to-rose-600',      icon: 'sailing',          bg: 'bg-red-500/10' },
-  'dragonball': { gradient: 'from-orange-500 to-red-500',    icon: 'flare',            bg: 'bg-orange-500/10' },
+const GAME_META = {
+  'pokemon':    { img: ptcgImg,  gradient: 'from-yellow-600/80 to-orange-700/80' },
+  'ptcg':       { img: ptcgImg,  gradient: 'from-yellow-600/80 to-orange-700/80' },
+  'onepiece':   { img: optcgImg, gradient: 'from-red-700/80 to-rose-900/80'      },
+  'one-piece':  { img: optcgImg, gradient: 'from-red-700/80 to-rose-900/80'      },
+  'optcg':      { img: optcgImg, gradient: 'from-red-700/80 to-rose-900/80'      },
+  'riftbound':  { img: rbtcgImg, gradient: 'from-violet-700/80 to-indigo-900/80' },
+  'rbtcg':      { img: rbtcgImg, gradient: 'from-violet-700/80 to-indigo-900/80' },
 };
 
-function gameStyle(id = '', name = '') {
-  const key = (id + name).toLowerCase().replace(/\s/g, '');
-  for (const [pattern, style] of Object.entries(GAME_STYLES)) {
-    if (key.includes(pattern.replace(/-/g, ''))) return style;
+function gameMeta(id = '', name = '') {
+  const key = (id + name).toLowerCase().replace(/[\s\-_]/g, '');
+  for (const [pattern, meta] of Object.entries(GAME_META)) {
+    if (key.includes(pattern.replace(/-/g, ''))) return meta;
   }
-  return { gradient: 'from-violet-500 to-purple-600', icon: 'playing_cards', bg: 'bg-violet-500/10' };
+  return { img: null, gradient: 'from-violet-700/80 to-purple-900/80' };
 }
 
 export function Singles() {
   const [games,   setGames]   = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     api.games()
@@ -51,7 +52,7 @@ export function Singles() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-40 bg-white/5 rounded-2xl animate-pulse" />
+              <div key={i} className="h-48 bg-white/5 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : games.length === 0 ? (
@@ -62,31 +63,30 @@ export function Singles() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {games.map(game => {
-              const style = gameStyle(game.id, game.name);
+              const meta = gameMeta(game.id, game.name);
               return (
                 <Link
                   key={game.id}
                   to={`/singles/${game.id}`}
-                  className="group relative overflow-hidden bg-white/5 border border-white/10 rounded-2xl p-7 hover:border-white/20 hover:-translate-y-1 hover:shadow-2xl transition-all"
+                  className="group relative overflow-hidden rounded-2xl h-48 border border-white/10 hover:border-white/20 hover:-translate-y-1 hover:shadow-2xl transition-all"
                 >
-                  {/* Background glow */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${style.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
+                  {/* Background image */}
+                  {meta.img
+                    ? <img src={meta.img} alt={game.name} className="absolute inset-0 w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-500" />
+                    : <div className="absolute inset-0 bg-white/5" />
+                  }
 
-                  <div className="relative flex items-center gap-5">
-                    <div className={`w-14 h-14 rounded-2xl ${style.bg} flex items-center justify-center flex-shrink-0 border border-white/10 group-hover:scale-110 transition-transform`}>
-                      <span className={`material-symbols-outlined text-3xl bg-gradient-to-br ${style.gradient} bg-clip-text text-transparent`}
-                        style={{ fontVariationSettings: "'FILL' 1" }}
-                      >
-                        {style.icon}
-                      </span>
+                  {/* Gradient overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-t ${meta.gradient} via-black/40 to-black/10`} />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+
+                  {/* Content */}
+                  <div className="absolute inset-0 flex flex-col justify-end p-6">
+                    <h2 className="text-2xl font-extrabold text-white drop-shadow-lg">{game.name}</h2>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <span className="text-sm font-semibold text-white/70 group-hover:text-white transition-colors">Ver cartas disponibles</span>
+                      <span className="material-symbols-outlined text-base text-white/70 group-hover:text-white group-hover:translate-x-1 transition-all">arrow_forward</span>
                     </div>
-                    <div className="min-w-0">
-                      <h2 className="text-xl font-extrabold text-white group-hover:text-violet-300 transition-colors truncate">{game.name}</h2>
-                      <p className="text-sm text-gray-400 mt-0.5">Ver cartas disponibles</p>
-                    </div>
-                    <span className="material-symbols-outlined text-gray-600 group-hover:text-violet-400 group-hover:translate-x-1 transition-all ml-auto flex-shrink-0">
-                      arrow_forward
-                    </span>
                   </div>
                 </Link>
               );
