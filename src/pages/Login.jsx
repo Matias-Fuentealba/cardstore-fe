@@ -96,7 +96,7 @@ export function Login() {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-white text-3xl">playing_cards</span>
           </div>
-          <h1 className="text-2xl font-bold text-white">Infinity Store</h1>
+          <h1 className="text-2xl font-bold text-white">La Tech TCG</h1>
           <p className="text-gray-400 text-sm mt-1">Tu tienda TCG de confianza</p>
         </div>
 

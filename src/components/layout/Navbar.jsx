@@ -28,7 +28,7 @@ export function Navbar() {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
             <span className="material-symbols-outlined text-white text-sm">playing_cards</span>
           </div>
-          <span className="font-bold text-white hidden sm:block">Infinity Store</span>
+          <span className="font-bold text-white hidden sm:block">La Tech TCG</span>
         </Link>
 
         {/* Search */}
@@ -56,7 +56,7 @@ export function Navbar() {
         {/* Nav links */}
         <div className="hidden md:flex items-center gap-1">
           <NavLink to="/singles">Singles</NavLink>
-          <NavLink to="/search">Catálogo</NavLink>
+          <NavLink to="/sellado">Sellado</NavLink>
           {/* <NavLink to="/deckbuilder">Deckbuilder</NavLink> */}
         </div>
 

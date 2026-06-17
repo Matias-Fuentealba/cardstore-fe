@@ -251,7 +251,7 @@ function PanelWishlist({ items, onRemove }) {
 }
 
 function PanelDatos({ user, onSave }) {
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', birthDate: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', birthDate: '', rut: '', address: '', region: '', city: '', cp: '' });
   const [saving, setSaving] = useState(false);
   const setField = k => v => setForm(f => ({ ...f, [k]: v }));
 
@@ -262,6 +262,11 @@ function PanelDatos({ user, onSave }) {
       email:     user.email     || '',
       phone:     user.phone     || '',
       birthDate: user.birthDate ? user.birthDate.slice(0, 10) : '',
+      rut:       user.rut       || '',
+      address:   user.address   || '',
+      region:    user.region    || '',
+      city:      user.city      || '',
+      cp:        user.cp        || '',
     });
   }, [user]);
 
@@ -284,20 +289,6 @@ function PanelDatos({ user, onSave }) {
   return (
     <div className="space-y-5">
       <h2 className="text-2xl font-bold text-white">Mis datos</h2>
-      {/* Avatar */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center gap-5">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-2xl font-black text-white flex-shrink-0">
-          {initials}
-        </div>
-        <div>
-          <p className="font-bold text-white mb-1">Foto de perfil</p>
-          <p className="text-xs text-gray-400 mb-3">JPG o PNG. Máximo 2MB.</p>
-          <button className="text-sm font-bold text-violet-400 hover:underline flex items-center gap-1">
-            <span className="material-symbols-outlined text-base">upload</span>
-            Subir imagen
-          </button>
-        </div>
-      </div>
       {/* Form */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
         <h3 className="font-bold text-white mb-5 flex items-center gap-2">
@@ -310,8 +301,23 @@ function PanelDatos({ user, onSave }) {
           <FInput label="Email" type="email" value={form.email} onChange={setField('email')}
             extra={<span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-green-400 text-base" title="Verificado">verified</span>}
           />
-          <FInput label="Teléfono" type="tel" value={form.phone} onChange={setField('phone')} />
+          <FInput label="Teléfono" type="tel" value={form.phone} onChange={v => setField('phone')(v.replace(/[^\d\s+\-]/g, ''))} />
+          <FInput label="RUT" value={form.rut} onChange={v => setField('rut')(v.replace(/[^\d.\-kK]/g, ''))} placeholder="12.345.678-9" />
           <FInput label="Fecha de nacimiento" type="date" value={form.birthDate} onChange={setField('birthDate')} />
+        </div>
+
+        <hr className="border-white/10 my-6" />
+        <h3 className="font-bold text-white mb-5 flex items-center gap-2">
+          <span className="material-symbols-outlined text-violet-400">home</span>
+          Dirección de envío
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="sm:col-span-2">
+            <FInput label="Dirección" value={form.address} onChange={setField('address')} placeholder="Calle, número, piso/depto" />
+          </div>
+          <FInput label="Ciudad / Comuna" value={form.city}   onChange={setField('city')}   placeholder="Santiago" />
+          <FInput label="Región"          value={form.region} onChange={setField('region')} placeholder="Región Metropolitana" />
+          <FInput label="Código postal"   value={form.cp}     onChange={v => setField('cp')(v.replace(/\D/g, ''))} placeholder="1234567" />
         </div>
         <div className="flex justify-end mt-6 gap-3">
           <button type="button" className="px-5 py-2.5 text-sm font-bold text-gray-400 hover:text-violet-400 transition-colors">Cancelar</button>

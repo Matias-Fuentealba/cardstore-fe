@@ -1,5 +1,5 @@
 /**
- * Infinity Store — API Client
+ * La Tech TCG — API Client
  */
 import { supabase } from '../lib/supabase';
 

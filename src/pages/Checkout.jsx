@@ -174,7 +174,12 @@ export function Checkout() {
         apellido: user.lastName  || '',
         email:    user.email     || '',
         tel:      user.phone     || '',
+        rut:      user.rut       || '',
+        address:  user.address   || '',
+        region:   user.region    || '',
+        cp:       user.cp        || '',
       }));
+      if (user.city) setComunaInput(user.city);
     }
   }, []);
 
@@ -383,7 +388,7 @@ export function Checkout() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
                 <span className="material-symbols-outlined text-white text-sm">playing_cards</span>
               </div>
-              <span className="font-bold text-white hidden sm:block">Infinity Store</span>
+              <span className="font-bold text-white hidden sm:block">La Tech TCG</span>
             </Link>
             <div className="hidden sm:flex items-center gap-4 text-xs text-gray-400">
               <span className="flex items-center gap-1"><span className="material-symbols-outlined text-green-400 text-sm">lock</span>Pago 100% seguro</span>
@@ -628,7 +633,7 @@ export function Checkout() {
                         Datos bancarios
                       </h3>
                       <div className="space-y-3 text-sm">
-                        {[['Banco','Banco Estado'],['N° de cuenta','00000001'],['Tipo','Cuenta Corriente'],['Titular','Infinity Store SpA']].map(([k,v]) => (
+                        {[['Banco','Banco Estado'],['N° de cuenta','00000001'],['Tipo','Cuenta Corriente'],['Titular','La Tech TCG']].map(([k,v]) => (
                           <div key={k} className="flex justify-between">
                             <span className="text-gray-400">{k}</span>
                             <span className="font-semibold text-white">{v}</span>
@@ -637,7 +642,7 @@ export function Checkout() {
                       </div>
                       <p className="text-xs text-gray-500 mt-4">
                         Una vez realizada la transferencia, envíanos el comprobante a{' '}
-                        <span className="text-violet-400">pagos@infinitystore.com</span>
+                        <span className="text-violet-400">pagos@latechtcg.com</span>
                       </p>
                     </div>
                   )}

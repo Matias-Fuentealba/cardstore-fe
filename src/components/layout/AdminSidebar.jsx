@@ -43,7 +43,7 @@ export function AdminSidebar() {
               <span className="material-symbols-outlined text-white text-base">playing_cards</span>
             </div>
             <div>
-              <div className="font-bold text-white text-sm">Infinity Store</div>
+              <div className="font-bold text-white text-sm">La Tech TCG</div>
               <div className="text-xs text-gray-500">Panel Admin</div>
             </div>
           </Link>

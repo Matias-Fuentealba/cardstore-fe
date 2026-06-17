@@ -331,7 +331,7 @@ export function Home() {
               <div className="bg-violet-600 text-white p-1 rounded-lg">
                 <span className="material-symbols-outlined block text-xl">layers</span>
               </div>
-              <span className="text-xl font-bold tracking-tight">InfinityStore</span>
+              <span className="text-xl font-bold tracking-tight">La Tech TCG</span>
             </div>
             <p className="text-gray-500 text-sm leading-relaxed mb-6">
               La tienda número uno para coleccionistas y jugadores competitivos de TCG en Latinoamérica.
