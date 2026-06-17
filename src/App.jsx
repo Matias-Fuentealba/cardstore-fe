@@ -15,7 +15,8 @@ import { NotFound } from './pages/NotFound';
 import { AuthCallback } from './pages/AuthCallback';
 import { VerifyEmail } from './pages/VerifyEmail';
 
-import { Singles }    from './pages/Singles';
+import { Singles }        from './pages/Singles';
+import { SinglesCatalog } from './pages/SinglesCatalog';
 import { Search }     from './pages/Search';
 import { CardDetail } from './pages/CardDetail';
 import { Cart }     from './pages/Cart';
@@ -78,7 +79,8 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
 
-        <Route path="/singles"  element={<PublicLayout><Singles /></PublicLayout>} />
+        <Route path="/singles"          element={<PublicLayout><Singles /></PublicLayout>} />
+        <Route path="/singles/:gameId"  element={<PublicLayout><SinglesCatalog /></PublicLayout>} />
         <Route path="/search"   element={<PublicLayout><Search /></PublicLayout>} />
         <Route path="/card/:id" element={<PublicLayout><CardDetail /></PublicLayout>} />
         <Route path="/cart"     element={<PublicLayout><Cart /></PublicLayout>} />
