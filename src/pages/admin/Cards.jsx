@@ -747,7 +747,7 @@ export function AdminCards() {
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg pointer-events-none">search</span>
               <input type="text" value={tableSearch}
-                onChange={e => setTableSearch(e.target.value)
+                onChange={e => setTableSearch(e.target.value)}
                 placeholder="Buscar carta..."
                 className="pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors w-56" />
             </div>
@@ -764,14 +764,14 @@ export function AdminCards() {
             </select>
             {/* Edición (solo si hay juego seleccionado) */}
             {filterGame && (
-              <select value={filterSet} onChange={e => setFilterSet(e.target.value)
+              <select value={filterSet} onChange={e => setFilterSet(e.target.value)}
                 className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
                 <option value="">{tableSetsLoading ? 'Cargando...' : 'Todas las ediciones'}</option>
                 {tableSets.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             )}
             {/* Rareza */}
-            <select value={filterRarity} onChange={e => setFilterRarity(e.target.value)
+            <select value={filterRarity} onChange={e => setFilterRarity(e.target.value)}
               className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
               <option value="">Todas las rarezas</option>
               {tableRarities.map(r => {
