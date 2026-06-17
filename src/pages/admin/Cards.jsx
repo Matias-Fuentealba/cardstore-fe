@@ -299,6 +299,7 @@ export function AdminCards() {
   const [tablePage,          setTablePage]          = useState(1);
   const [tableSets,          setTableSets]          = useState([]);
   const [tableSetsLoading,   setTableSetsLoading]   = useState(false);
+  const [tableRarities,      setTableRarities]      = useState([]);
 
   // Stats
   const [stats, setStats] = useState({});
@@ -362,6 +363,15 @@ export function AdminCards() {
       setTableSets([]);
     } finally {
       setTableSetsLoading(false);
+    }
+  }
+
+  async function loadTableRarities(game) {
+    try {
+      const data = await api.rarities(game ? [game] : []);
+      setTableRarities(data?.rarities || data || []);
+    } catch {
+      setTableRarities([]);
     }
   }
 
@@ -741,8 +751,8 @@ export function AdminCards() {
             <select value={filterGame}
               onChange={e => {
                 const g = e.target.value;
-                setFilterGame(g); setFilterSet(''); setTableSets([]);
-                if (g) loadTableSets(g);
+                setFilterGame(g); setFilterSet(''); setFilterRarity(''); setTableSets([]); setTableRarities([]);
+                if (g) { loadTableSets(g); loadTableRarities(g); }
                 handleTableFilter();
               }}
               className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
@@ -760,9 +770,11 @@ export function AdminCards() {
             {/* Rareza */}
             <select value={filterRarity} onChange={e => { setFilterRarity(e.target.value); handleTableFilter(); }}
               className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
-              {[['','Todas las rarezas'],['Common','Common'],['Uncommon','Uncommon'],['Rare','Rare'],['Ultra Rare','Ultra Rare'],['Secret Rare','Secret Rare']].map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
+              <option value="">Todas las rarezas</option>
+              {tableRarities.map(r => {
+                const val = r.name || r.id || r;
+                return <option key={val} value={val}>{r.name || r}</option>;
+              })}
             </select>
             <button onClick={activateAllVisible}
               className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-semibold rounded-xl transition border border-white/10">
