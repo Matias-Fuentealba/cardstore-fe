@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../../api';
 import { showToast } from '../../components/ui/Toast';
 
@@ -309,10 +309,18 @@ export function AdminCards() {
   const [clearModal,      setClearModal]      = useState(false);
   const [bulkStockModal,  setBulkStockModal]  = useState(false);
 
-  const filterTimeout = useRef(null);
-  const setDropRef    = useRef(null);
+  const filterTimeout  = useRef(null);
+  const setDropRef     = useRef(null);
+  const isFirstRender  = useRef(true);
 
   useEffect(() => { loadStats(); loadTable(); }, []);
+
+  // Re-fetch table whenever filters change (avoids stale closure from setTimeout)
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    clearTimeout(filterTimeout.current);
+    filterTimeout.current = setTimeout(() => loadTable(1), 350);
+  }, [filterGame, filterSet, filterRarity, tableSearch]);
 
   // Close set dropdown on outside click
   useEffect(() => {
@@ -347,11 +355,6 @@ export function AdminCards() {
     } finally {
       setTableLoading(false);
     }
-  }
-
-  function handleTableFilter() {
-    clearTimeout(filterTimeout.current);
-    filterTimeout.current = setTimeout(() => loadTable(1), 350);
   }
 
   async function loadTableSets(game) {
@@ -743,7 +746,7 @@ export function AdminCards() {
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg pointer-events-none">search</span>
               <input type="text" value={tableSearch}
-                onChange={e => { setTableSearch(e.target.value); handleTableFilter(); }}
+                onChange={e => setTableSearch(e.target.value)
                 placeholder="Buscar carta..."
                 className="pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors w-56" />
             </div>
@@ -753,7 +756,6 @@ export function AdminCards() {
                 const g = e.target.value;
                 setFilterGame(g); setFilterSet(''); setFilterRarity(''); setTableSets([]); setTableRarities([]);
                 if (g) { loadTableSets(g); loadTableRarities(g); }
-                handleTableFilter();
               }}
               className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
               <option value="">Todos los juegos</option>
@@ -761,14 +763,14 @@ export function AdminCards() {
             </select>
             {/* Edición (solo si hay juego seleccionado) */}
             {filterGame && (
-              <select value={filterSet} onChange={e => { setFilterSet(e.target.value); handleTableFilter(); }}
+              <select value={filterSet} onChange={e => setFilterSet(e.target.value)
                 className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
                 <option value="">{tableSetsLoading ? 'Cargando...' : 'Todas las ediciones'}</option>
                 {tableSets.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             )}
             {/* Rareza */}
-            <select value={filterRarity} onChange={e => { setFilterRarity(e.target.value); handleTableFilter(); }}
+            <select value={filterRarity} onChange={e => setFilterRarity(e.target.value)
               className="bg-[#1a1a1a] [color-scheme:dark] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors">
               <option value="">Todas las rarezas</option>
               {tableRarities.map(r => {
