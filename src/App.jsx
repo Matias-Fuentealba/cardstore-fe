@@ -26,6 +26,7 @@ import { PaymentError }   from './pages/PaymentError';
 import { Profile }     from './pages/Profile';
 import { Deckbuilder } from './pages/Deckbuilder';
 import { ComingSoon }  from './pages/ComingSoon';
+import { TermsAndConditions } from './pages/TermsAndConditions';
 import { AdminCards }     from './pages/admin/Cards';
 import { AdminInventory } from './pages/admin/Inventory';
 import { AdminOrders }    from './pages/admin/Orders';
@@ -92,6 +93,7 @@ export default function App() {
         <Route path="/profile"     element={<PrivateRoute><PublicLayout><Profile /></PublicLayout></PrivateRoute>} />
         <Route path="/deckbuilder" element={<PublicLayout><Deckbuilder /></PublicLayout>} />
         <Route path="/sellado"     element={<PublicLayout><ComingSoon /></PublicLayout>} />
+        <Route path="/terminos"    element={<PublicLayout><TermsAndConditions /></PublicLayout>} />
         {/* Admin */}
         <Route path="/admin/cards"     element={<PrivateRoute adminOnly><AdminLayout><AdminCards /></AdminLayout></PrivateRoute>} />
         <Route path="/admin/inventory" element={<PrivateRoute adminOnly><AdminLayout><AdminInventory /></AdminLayout></PrivateRoute>} />

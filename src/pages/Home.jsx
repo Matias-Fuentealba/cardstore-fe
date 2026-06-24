@@ -377,11 +377,10 @@ export function Home() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-gray-600 text-xs">
-          <p>© 2025 TCG Store. Todos los derechos reservados.</p>
+          <p>© 2025 La Tech TCG. Todos los derechos reservados.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-violet-400 transition-colors">Términos de uso</a>
-            <a href="#" className="hover:text-violet-400 transition-colors">Política de privacidad</a>
-            <a href="#" className="hover:text-violet-400 transition-colors">Cookies</a>
+            <Link to="/terminos" className="hover:text-violet-400 transition-colors">Términos y Condiciones</Link>
+            <a href="mailto:pagos@latechtcg.com" className="hover:text-violet-400 transition-colors">Contacto</a>
           </div>
         </div>
       </footer>
