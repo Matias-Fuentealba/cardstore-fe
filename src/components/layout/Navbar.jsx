@@ -25,7 +25,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 mr-4">
-          <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-8 w-8 rounded-lg object-cover" />
+          <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-[80px] w-auto object-contain" />
           <span className="font-bold text-white hidden sm:block">La Tech TCG</span>
         </Link>
 

@@ -262,7 +262,8 @@ export function Home() {
         </div>
       </section>
 
-      {/* ══ Trending marquee ══════════════════════════════════════════════════ */}
+      {/* ══ Trending marquee — oculto hasta tener datos reales ═══════════════ */}
+      {false && (
       <section className="py-24 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
           <h2 className="text-3xl font-bold">Trending Meta Cards</h2>
@@ -289,6 +290,7 @@ export function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ══ Newsletter ════════════════════════════════════════════════════════ */}
       <section className="py-24">
@@ -328,7 +330,7 @@ export function Home() {
 
           <div>
             <div className="flex items-center gap-2 mb-6">
-              <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-8 w-8 rounded-lg object-cover" />
+              <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-[80px] w-auto object-contain" />
               <span className="text-xl font-bold tracking-tight">La Tech TCG</span>
             </div>
             <p className="text-gray-500 text-sm leading-relaxed mb-6">
