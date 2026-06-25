@@ -207,7 +207,7 @@ export function Deckbuilder() {
 
   // ── Save deck ───────────────────────────────────────────────────────────────
   async function saveDeck() {
-    if (!isLoggedIn) { showToast('Iniciá sesión para guardar decks', 'warn'); return; }
+    if (!isLoggedIn) { showToast('Inicia sesión para guardar decks', 'warn'); return; }
     const name   = deckName.trim() || 'Mi Deck';
     const cartas = deckEntries.map(({ card, qty }) => ({ cardId: card.id, qty }));
     if (cartas.length === 0) { showToast('El deck está vacío', 'warn'); return; }
@@ -335,7 +335,7 @@ export function Deckbuilder() {
             <span className="material-symbols-outlined text-3xl text-gray-600">style</span>
           </div>
           <p className="text-sm font-bold text-gray-500 mb-1">El deck está vacío</p>
-          <p className="text-xs text-gray-600">Hacé click en una carta para agregarla</p>
+          <p className="text-xs text-gray-600">Haz clic en una carta para agregarla</p>
         </div>
       )}
 

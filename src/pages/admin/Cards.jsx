@@ -111,7 +111,7 @@ function EditModal({ card, onSave, onClose }) {
           </div>
           <div className="flex items-start gap-2.5 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3">
             <span className="material-symbols-outlined text-violet-400 text-base mt-0.5">info</span>
-            <p className="text-xs text-gray-400">Para ajustar precio y stock, usá la sección <span className="font-semibold text-gray-300">Inventario</span>.</p>
+            <p className="text-xs text-gray-400">Para ajustar precio y stock, usa la sección <span className="font-semibold text-gray-300">Inventario</span>.</p>
           </div>
         </div>
         <div className="flex gap-3 mt-6">
@@ -133,7 +133,7 @@ function ClearModal({ count, onConfirm, onClose }) {
   const [loading, setLoading]   = useState(false);
 
   async function handleConfirm() {
-    if (!password) { setError('Ingresá tu contraseña.'); return; }
+    if (!password) { setError('Ingresa tu contraseña.'); return; }
     setLoading(true); setError('');
     try {
       await onConfirm(password);
@@ -156,7 +156,7 @@ function ClearModal({ count, onConfirm, onClose }) {
           </div>
         </div>
         <p className="text-sm text-gray-400 mb-4">
-          Se eliminarán <strong className="text-white">{count ? `las ${count.toLocaleString('es-CL')} cartas` : 'todas las cartas'}</strong>. Ingresá tu contraseña para confirmar.
+          Se eliminarán <strong className="text-white">{count ? `las ${count.toLocaleString('es-CL')} cartas` : 'todas las cartas'}</strong>. Ingresa tu contraseña para confirmar.
         </p>
         <div className="mb-4">
           <label className="block text-sm font-semibold text-gray-300 mb-1.5">Contraseña</label>
@@ -196,7 +196,7 @@ function BulkStockModal({ total, onConfirm, onClose }) {
     const conditions = ['nm', 'lp', 'mp', 'hp']
       .filter(c => parseInt(data[c].price) > 0 || parseInt(data[c].qty) > 0)
       .map(c => ({ condition: c, price: parseInt(data[c].price) || 0, qty: parseInt(data[c].qty) || 0 }));
-    if (!conditions.length) { showToast('Ingresá al menos un precio o stock', 'warn'); return; }
+    if (!conditions.length) { showToast('Ingresa al menos un precio o stock', 'warn'); return; }
     setSaving(true);
     try {
       await onConfirm(lang, conditions);
@@ -478,7 +478,7 @@ export function AdminCards() {
 
   // ── Import ───────────────────────────────────────────────────────────────────
   async function importSet() {
-    if (selectedIds.size === 0) { showToast('Seleccioná al menos una carta', 'warn'); return; }
+    if (selectedIds.size === 0) { showToast('Selecciona al menos una carta', 'warn'); return; }
     setImporting(true);
     const cards = previewCards.filter(c => selectedIds.has(c.id));
     try {

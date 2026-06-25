@@ -158,7 +158,7 @@ export function Home() {
       <section className="py-20 bg-white/[0.02] border-y border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-12">
           <h2 className="text-3xl font-bold">Explora por Juego</h2>
-          <p className="text-gray-500 mt-2">Encontrá las singles que buscás por juego</p>
+          <p className="text-gray-500 mt-2">Encuentra las singles que buscas por juego</p>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
           {GAME_CATEGORIES.map(g => (

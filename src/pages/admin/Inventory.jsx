@@ -21,7 +21,7 @@ function StockModal({ item, onSave, onClose }) {
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    if (!lang) { showToast('Seleccioná un idioma', 'error'); return; }
+    if (!lang) { showToast('Selecciona un idioma', 'error'); return; }
     setSaving(true);
     try {
       const payload = { condition: cond, language: lang, foil: isFoil, qty: parseInt(qty) || 0, price: parseInt(price) || 0 };
@@ -296,8 +296,8 @@ export function AdminInventory() {
               onClick={() => fileRef.current?.click()}
             >
               <span className="material-symbols-outlined text-4xl text-gray-600 mb-3 block">upload_file</span>
-              <p className="text-sm font-semibold text-gray-400">Arrastrá tu archivo aquí</p>
-              <p className="text-xs text-gray-500 mt-1">o hacé clic para seleccionar</p>
+              <p className="text-sm font-semibold text-gray-400">Arrastra tu archivo aquí</p>
+              <p className="text-xs text-gray-500 mt-1">o haz clic para seleccionar</p>
               <p className="text-xs text-gray-600 mt-3">.xlsx · .xls · .csv</p>
             </div>
             <input
