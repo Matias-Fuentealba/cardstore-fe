@@ -87,6 +87,7 @@ function CardItem({ card, viewMode }) {
   const price       = firstCond?.price ?? 0;
   const totalStock  = Object.values(inv).flatMap(l => Object.values(l)).reduce((s, c) => s + (c.stock ?? 0), 0);
   const outOfStock  = totalStock === 0;
+  const hasFoil     = Object.values(inv).some(l => Object.keys(l).some(k => k.endsWith('_foil') && (l[k]?.stock ?? 0) > 0));
   const activeCond  = selectedCond || firstCond?.key || 'nm';
   const activeCondData = availableConds.find(c => c.key === activeCond);
 
@@ -138,6 +139,11 @@ function CardItem({ card, viewMode }) {
           <div className="relative aspect-[3/4] rounded-lg overflow-hidden mb-4 bg-black/20">
             <img src={img} alt={card.name} className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 ${outOfStock ? 'grayscale' : ''}`} />
             <span className={`absolute top-2 left-2 ${rStyle} text-[10px] font-black px-2 py-0.5 rounded-full uppercase`}>{card.rarity || ''}</span>
+            {hasFoil && !outOfStock && (
+              <span className="absolute top-2 right-2 flex items-center gap-0.5 bg-yellow-500/90 text-slate-900 text-[10px] font-black px-2 py-0.5 rounded-full">
+                <span className="material-symbols-outlined text-xs">auto_awesome</span>Foil
+              </span>
+            )}
             {outOfStock
               ? <span className="absolute bottom-2 left-0 right-0 mx-auto w-fit bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Sin stock</span>
               : <button onClick={handleWishlist} className="absolute top-2 right-2 w-7 h-7 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400 text-gray-300">

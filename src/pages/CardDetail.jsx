@@ -98,6 +98,7 @@ export function CardDetail() {
   const [loading,    setLoading]    = useState(true);
   const [condition,  setCondition]  = useState('nm');
   const [language,   setLanguage]   = useState(null);
+  const [foil,       setFoil]       = useState(false);
   const [qty,        setQty]        = useState(1);
   const [qtyMax,     setQtyMax]     = useState(99);
   const [addState,   setAddState]   = useState('idle'); // 'idle' | 'loading' | 'done'
@@ -123,32 +124,43 @@ export function CardDetail() {
   const langs = inventory ? Object.keys(inventory).filter(l => l !== 'default') : [];
   const langData = inventory ? (inventory[language] || inventory['default'] || {}) : {};
 
+  const hasFoil = Object.keys(langData).some(k => k.endsWith('_foil') && (langData[k]?.stock ?? 0) > 0);
+
   function getPrices() {
     const prices = {};
-    Object.entries(langData).forEach(([cond, data]) => {
-      if (data?.price) prices[cond] = data.price;
+    Object.entries(langData).forEach(([key, data]) => {
+      if (foil) {
+        if (key.endsWith('_foil') && data?.price) prices[key.replace('_foil', '')] = data.price;
+      } else {
+        if (!key.endsWith('_foil') && data?.price) prices[key] = data.price;
+      }
     });
     return prices;
   }
   const prices = getPrices();
   const mainPrice = prices.nm ?? prices.lp ?? prices.mp ?? prices.hp;
-  const condPrice = prices[condition];
 
   function getStock(cond) {
-    return langData[cond]?.stock ?? 0;
+    const key = foil ? `${cond}_foil` : cond;
+    return langData[key]?.stock ?? 0;
   }
   const currentStock = getStock(condition);
 
   useEffect(() => {
     setQtyMax(currentStock || 0);
     if (qty > currentStock) setQty(Math.max(1, currentStock));
-  }, [condition, language, card]);
+  }, [condition, language, foil, card]);
+
+  useEffect(() => {
+    setCondition('nm');
+    if (!hasFoil) setFoil(false);
+  }, [foil, language]);
 
   const handleAddToCart = async () => {
     if (addState !== 'idle' || currentStock === 0) return;
     setAddState('loading');
     try {
-      await api.cart.addItem(id, condition, qty, language);
+      await api.cart.addItem(id, condition, qty, language, foil);
       await refreshCart();
       setAddState('done');
       setTimeout(() => setAddState('idle'), 2000);
@@ -291,7 +303,7 @@ export function CardDetail() {
                   {mainPrice != null ? formatCLP(mainPrice) : '—'}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 -mt-4">Precio para Near Mint. Otros estados disponibles abajo.</p>
+              <p className="text-xs text-gray-500 -mt-4">Precio para Near Mint{foil ? ' Foil' : ''}. Otros estados disponibles abajo.</p>
 
               <hr className="border-white/5" />
 
@@ -312,6 +324,26 @@ export function CardDetail() {
                         </span>
                       </label>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Foil toggle */}
+              {hasFoil && (
+                <div>
+                  <p className="text-sm font-bold text-gray-300 mb-3">Versión</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setFoil(false)}
+                      className={`px-4 py-2 rounded-xl border-2 text-sm font-semibold transition-all
+                        ${!foil ? 'border-violet-600 bg-violet-600/15 text-violet-400' : 'border-white/10 text-gray-400 hover:border-violet-500 hover:text-violet-400'}`}>
+                      Normal
+                    </button>
+                    <button onClick={() => setFoil(true)}
+                      className={`px-4 py-2 rounded-xl border-2 text-sm font-semibold transition-all flex items-center gap-1.5
+                        ${foil ? 'border-yellow-500 bg-yellow-500/10 text-yellow-400' : 'border-white/10 text-gray-400 hover:border-yellow-500 hover:text-yellow-400'}`}>
+                      <span className="material-symbols-outlined text-base">auto_awesome</span>
+                      Foil
+                    </button>
                   </div>
                 </div>
               )}

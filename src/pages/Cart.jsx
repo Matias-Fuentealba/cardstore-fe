@@ -70,7 +70,7 @@ function CartItem({ item, onRemove, onQtyChange }) {
               </p>
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                {COND_LABELS[item.condition] || item.condition?.toUpperCase()} · En stock
+                {COND_LABELS[item.condition] || item.condition?.toUpperCase()}{item.foil ? ' · Foil' : ''} · En stock
               </p>
             </div>
             <button

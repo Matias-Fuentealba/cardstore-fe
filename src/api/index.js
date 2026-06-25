@@ -121,8 +121,8 @@ export const api = {
 
   cart: {
     get: () => GET('/cart'),
-    addItem: (cardId, condition, qty, language) =>
-      POST('/cart/items', { cardId, condition, qty, ...(language ? { language } : {}) }),
+    addItem: (cardId, condition, qty, language, foil = false) =>
+      POST('/cart/items', { cardId, condition, qty, foil, ...(language ? { language } : {}) }),
     updateItem: (itemId, qty) => PATCH(`/cart/items/${itemId}`, { qty }),
     removeItem: (itemId) => DELETE(`/cart/items/${itemId}`),
     clear: () => DELETE('/cart'),

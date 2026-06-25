@@ -13,17 +13,18 @@ const LANG_LABELS = { en: 'EN', es: 'ES', jp: 'JP', pt: 'PT', fr: 'FR', de: 'DE'
 
 // ─── Edit stock modal ─────────────────────────────────────────────────────────
 function StockModal({ item, onSave, onClose }) {
-  const [cond,  setCond]  = useState(item.condition || 'nm');
-  const [lang,  setLang]  = useState((item.language && item.language !== 'default') ? item.language : 'en');
-  const [qty,   setQty]   = useState(item.qty ?? 0);
-  const [price, setPrice] = useState(item.price ?? 0);
+  const [cond,   setCond]   = useState(item.condition || 'nm');
+  const [lang,   setLang]   = useState((item.language && item.language !== 'default') ? item.language : 'en');
+  const [isFoil, setIsFoil] = useState(item.foil ?? false);
+  const [qty,    setQty]    = useState(item.qty ?? 0);
+  const [price,  setPrice]  = useState(item.price ?? 0);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     if (!lang) { showToast('Seleccioná un idioma', 'error'); return; }
     setSaving(true);
     try {
-      const payload = { condition: cond, language: lang, qty: parseInt(qty) || 0, price: parseInt(price) || 0 };
+      const payload = { condition: cond, language: lang, foil: isFoil, qty: parseInt(qty) || 0, price: parseInt(price) || 0 };
       if (item.language && item.language !== lang) payload.oldLanguage = item.language;
       await api.admin.inventory.updateStock(item.cardId, payload);
       onSave();
@@ -70,6 +71,15 @@ function StockModal({ item, onSave, onClose }) {
               <option value="de">Alemán (DE)</option>
               <option value="ko">Coreano (KO)</option>
             </select>
+          </div>
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={isFoil} onChange={e => setIsFoil(e.target.checked)} className="w-4 h-4 accent-yellow-500" />
+              <span className="text-sm font-semibold text-gray-300 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-base text-yellow-400">auto_awesome</span>
+                Foil
+              </span>
+            </label>
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-300 mb-1.5">Stock</label>
@@ -431,9 +441,16 @@ export function AdminInventory() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-400">{item.setName || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold ${COND_COLORS[item.condition] || 'bg-white/5 text-gray-400'}`}>
-                        {item.condition?.toUpperCase() || '—'}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold ${COND_COLORS[item.condition] || 'bg-white/5 text-gray-400'}`}>
+                          {item.condition?.toUpperCase() || '—'}
+                        </span>
+                        {item.foil && (
+                          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-yellow-500/15 text-yellow-400">
+                            <span className="material-symbols-outlined text-xs">auto_awesome</span>Foil
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/5 text-gray-400">
