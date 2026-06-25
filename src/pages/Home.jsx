@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, formatCLP } from '../api';
-import { useCartStore } from '../store/cartStore';
-import { showToast } from '../components/ui/Toast';
 import optcgImg   from '../assets/optcg.webp';
 import ptcgImg    from '../assets/ptcg.webp';
 import rbtcgImg   from '../assets/rbtcg.jpg';
@@ -23,25 +21,9 @@ function rarityStyle(r) {
 
 // ─── Featured card tile ───────────────────────────────────────────────────────
 function FeaturedCard({ card }) {
-  const addItem = useCartStore(s => s.addItem);
-  const [adding, setAdding] = useState(false);
-
   const inv   = card.inventory && typeof card.inventory === 'object' ? card.inventory : {};
   const lang  = inv.default || Object.values(inv)[0] || {};
   const price = (lang.nm || lang.lp || lang.mp || lang.hp)?.price ?? 0;
-
-  async function handleAdd(e) {
-    e.preventDefault();
-    setAdding(true);
-    try {
-      await addItem(card.id, 'nm', 1);
-      showToast('Añadido al carrito', 'success');
-    } catch (ex) {
-      showToast(ex.error || 'Error al agregar', 'error');
-    } finally {
-      setAdding(false);
-    }
-  }
 
   return (
     <Link
@@ -60,16 +42,7 @@ function FeaturedCard({ card }) {
       </div>
       <h4 className="font-bold text-white truncate text-sm mb-0.5">{card.name}</h4>
       <p className="text-xs text-gray-400 mb-3">{card.setName || card.set || ''}</p>
-      <div className="flex items-center justify-between">
-        <span className="text-base font-black text-violet-400">{formatCLP(price)}</span>
-        <button
-          onClick={handleAdd}
-          disabled={adding}
-          className="bg-violet-600/20 hover:bg-violet-600 text-violet-400 hover:text-white p-2 rounded-xl transition-colors disabled:opacity-50"
-        >
-          <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
-        </button>
-      </div>
+      <span className="text-base font-black text-violet-400">{formatCLP(price)}</span>
     </Link>
   );
 }
