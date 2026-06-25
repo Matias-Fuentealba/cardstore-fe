@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { api, formatCLP, COND_LABELS } from '../api';
 import { useCartStore } from '../store/cartStore';

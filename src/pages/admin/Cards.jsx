@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../../api';
 import { showToast } from '../../components/ui/Toast';
 
@@ -347,7 +347,7 @@ export function AdminCards() {
       if (filterGame)   params.game = filterGame;
       if (filterSet)    params.set = filterSet;
       if (filterRarity) params.rarity = filterRarity;
-      console.log('[Cards] rarity enviada:', JSON.stringify(filterRarity), '| tableRarities:', tableRarities);
+
       const data = await api.admin.cards.list(params);
       setTableCards(data.data || data || []);
       setTableTotal(data.total ?? (data.data || data || []).length);

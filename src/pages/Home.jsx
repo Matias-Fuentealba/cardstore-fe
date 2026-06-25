@@ -333,45 +333,30 @@ export function Home() {
               <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-[80px] w-auto object-contain" />
               <span className="text-xl font-bold tracking-tight">La Tech TCG</span>
             </div>
-            <p className="text-gray-500 text-sm leading-relaxed mb-6">
-              La tienda número uno para coleccionistas y jugadores competitivos de TCG en Latinoamérica.
+            <p className="text-gray-500 text-sm leading-relaxed">
+              La tienda para coleccionistas y jugadores competitivos de TCG en Chile.
             </p>
-            <div className="flex gap-3">
-              {['public', 'alternate_email', 'share'].map(icon => (
-                <a key={icon} href="#" className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center hover:text-violet-400 transition-colors text-gray-500">
-                  <span className="material-symbols-outlined">{icon}</span>
-                </a>
-              ))}
-            </div>
           </div>
 
           <div>
             <h4 className="font-bold mb-6">Tienda</h4>
             <ul className="space-y-4 text-sm text-gray-500">
-              <li><Link to="/singles" className="hover:text-violet-400 transition-colors">Singles Pokémon TCG</Link></li>
-              <li><Link to="/singles" className="hover:text-violet-400 transition-colors">Scarlet &amp; Violet</Link></li>
-              <li><Link to="/singles" className="hover:text-violet-400 transition-colors">Sword &amp; Shield</Link></li>
-              <li><a href="#" className="hover:text-violet-400 transition-colors">Accesorios</a></li>
+              <li><Link to="/singles" className="hover:text-violet-400 transition-colors">Singles</Link></li>
+              <li><Link to="/sellado" className="hover:text-violet-400 transition-colors">Sellado</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold mb-6">Comunidad</h4>
+            <h4 className="font-bold mb-6">Legal</h4>
             <ul className="space-y-4 text-sm text-gray-500">
-              <li><Link to="/deckbuilder" className="hover:text-violet-400 transition-colors">Deck Builder</Link></li>
-              <li><a href="#" className="hover:text-violet-400 transition-colors">Análisis del Meta</a></li>
-              <li><a href="#" className="hover:text-violet-400 transition-colors">Eventos Locales</a></li>
-              <li><a href="#" className="hover:text-violet-400 transition-colors">Blog de noticias</a></li>
+              <li><Link to="/terminos" className="hover:text-violet-400 transition-colors">Términos y Condiciones</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold mb-6">Soporte</h4>
+            <h4 className="font-bold mb-6">Contacto</h4>
             <ul className="space-y-4 text-sm text-gray-500">
-              <li><a href="#" className="hover:text-violet-400 transition-colors">Preguntas Frecuentes</a></li>
-              <li><a href="#" className="hover:text-violet-400 transition-colors">Envíos y devoluciones</a></li>
-              <li><a href="#" className="hover:text-violet-400 transition-colors">Guía de estados de cartas</a></li>
-              <li><a href="#" className="hover:text-violet-400 transition-colors">Contacto</a></li>
+              <li><a href="mailto:pagos@latechtcg.com" className="hover:text-violet-400 transition-colors">pagos@latechtcg.com</a></li>
             </ul>
           </div>
         </div>
