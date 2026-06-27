@@ -90,6 +90,8 @@ export const useAuthStore = create((set, get) => ({
     // Set hydrated:true so PrivateRoute doesn't block while hydrate() is still
     // in-flight. _loginAt prevents hydrate()'s catch from clearing this state.
     set({ user, isLoggedIn: true, hydrated: true, _loginAt: Date.now() });
+    const { useCartStore } = await import('./cartStore');
+    useCartStore.getState().refresh().catch(() => {});
     return { user };
   },
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, formatCLP } from '../api';
 import { useCartStore } from '../store/cartStore';
+import { useAuthStore } from '../store/authStore';
 
 async function fetchWithRetry(fn, attempts = 3, delayMs = 1500) {
   try {
@@ -49,6 +50,7 @@ export function PaymentSuccess() {
   const tokenTrx = searchParams.get('tokenTrx');
   const provider  = searchParams.get('provider') ?? 'transbank';
   const refreshCart = useCartStore(s => s.refresh);
+  const hydrated    = useAuthStore(s => s.hydrated);
 
   const [payment,  setPayment]  = useState(null);
   const [loading,  setLoading]  = useState(true);
@@ -56,6 +58,11 @@ export function PaymentSuccess() {
   const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
+    // Wait for session hydration before hitting the API — on return from
+    // Mercado Pago the page is a fresh load and the Supabase token must be
+    // restored first, otherwise the request fires without auth and 401s.
+    if (!hydrated) return;
+
     if (!tokenTrx) {
       setError('No se recibió el token de la transacción.');
       setLoading(false);
@@ -80,7 +87,7 @@ export function PaymentSuccess() {
         setError('No se pudo verificar el resultado del pago.');
         setLoading(false);
       });
-  }, [tokenTrx, provider, retryKey]);
+  }, [tokenTrx, provider, retryKey, hydrated]);
 
   const handleRetry = () => {
     setRetryKey(k => k + 1);
