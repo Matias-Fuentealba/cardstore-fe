@@ -2,17 +2,19 @@ import { create } from 'zustand';
 import { Auth, api, API_BASE } from '../api';
 import { supabase } from '../lib/supabase';
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   // Optimistic cache from localStorage (safe fields only — no tokens, no PII).
   // Replaced by backend truth after hydrate() resolves.
   user: Auth.getUser(),
   isLoggedIn: !!Auth.getUser(),
   hydrated: false,
+  _loginAt: 0, // timestamp of last explicit login, used to detect race with hydrate()
 
   // Bootstrap: verify current session via backend cookie, resolve auth state.
   // Uses a raw fetch to avoid the 401-redirect logic in apiFetch — a missing
   // session on a public page is expected, not an error.
   hydrate: async () => {
+    const fetchStarted = Date.now();
     try {
       const res = await fetch(`${API_BASE}/users/me`, {
         credentials: 'include',
@@ -23,6 +25,12 @@ export const useAuthStore = create((set) => ({
       Auth.setUser(user);
       set({ user, isLoggedIn: true, hydrated: true });
     } catch {
+      // If a login (email or OAuth) happened while this fetch was in-flight,
+      // don't overwrite the auth state it established — just mark as hydrated.
+      if (get()._loginAt > fetchStarted) {
+        set({ hydrated: true });
+        return;
+      }
       Auth.removeUser();
       set({ user: null, isLoggedIn: false, hydrated: true });
     }
@@ -32,7 +40,7 @@ export const useAuthStore = create((set) => ({
     const data = await api.auth.login(email, password, remember);
     // Backend sets httpOnly session cookie; we only cache non-sensitive fields.
     Auth.setUser(data.user);
-    set({ user: data.user, isLoggedIn: true });
+    set({ user: data.user, isLoggedIn: true, hydrated: true, _loginAt: Date.now() });
     const { useCartStore } = await import('./cartStore');
     useCartStore.getState().refresh().catch(() => {});
     return data;
@@ -63,7 +71,9 @@ export const useAuthStore = create((set) => ({
     }
 
     Auth.setUser(user);
-    set({ user, isLoggedIn: true });
+    // Set hydrated:true so PrivateRoute doesn't block while hydrate() is still
+    // in-flight. _loginAt prevents hydrate()'s catch from clearing this state.
+    set({ user, isLoggedIn: true, hydrated: true, _loginAt: Date.now() });
     return { user };
   },
 
