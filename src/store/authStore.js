@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Auth, api, API_BASE } from '../api';
+import { Auth, api, API_BASE, setSupabearer, clearSupabearer } from '../api';
 import { supabase } from '../lib/supabase';
 
 export const useAuthStore = create((set, get) => ({
@@ -51,23 +51,18 @@ export const useAuthStore = create((set, get) => ({
     const { access_token, user: supaUser } = session;
     let user;
 
+    // Keep the Supabase token in memory so all apiFetch calls include it as
+    // Bearer. This is the auth mechanism for Google OAuth users until the
+    // backend establishes a proper session cookie for them.
+    setSupabearer(access_token);
+
     try {
       // Exchange Supabase token for backend session cookie via dedicated endpoint.
       const res = await api.auth.socialLogin(access_token);
       user = res?.user ?? res;
     } catch {
-      // Fallback: call /users/me with the Supabase Bearer token directly.
-      // Backend must validate Supabase JWT and set its own session cookie here.
-      const meRes = await fetch(`${API_BASE}/users/me`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': '1',
-          'Authorization': `Bearer ${access_token}`,
-        },
-      });
-      if (!meRes.ok) throw new Error('Social login failed');
-      user = await meRes.json();
+      // Fallback: call /users/me — apiFetch now sends the Bearer token above.
+      user = await api.user.me();
     }
 
     Auth.setUser(user);
@@ -80,6 +75,7 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     await api.auth.logout().catch(() => {}); // backend clears httpOnly cookie
     await supabase.auth.signOut().catch(() => {});
+    clearSupabearer();
     Auth.clear();
     set({ user: null, isLoggedIn: false });
   },

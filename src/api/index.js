@@ -8,6 +8,13 @@ export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/a
 
 const SAFE_USER_FIELDS = ['id', 'firstName', 'lastName', 'email', 'role', 'avatar'];
 
+// In-memory Bearer token for Supabase OAuth users.
+// Never persisted to localStorage. Cleared on logout or page reload.
+// Cookie-authenticated users (email/password) don't use this.
+let _supabearer = null;
+export const setSupabearer = (t) => { _supabearer = t; };
+export const clearSupabearer = () => { _supabearer = null; };
+
 // ─── User cache (no tokens, no PII) ──────────────────────────────────────────
 export const Auth = {
   getUser() {
@@ -30,6 +37,7 @@ async function apiFetch(path, options = {}, retry = true) {
   const headers = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     'ngrok-skip-browser-warning': '1',
+    ...(_supabearer ? { 'Authorization': `Bearer ${_supabearer}` } : {}),
     ...options.headers,
   };
 
