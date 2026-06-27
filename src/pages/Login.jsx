@@ -97,11 +97,8 @@ export function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center mx-auto mb-4">
-            <span className="material-symbols-outlined text-white text-3xl">playing_cards</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white">La Tech TCG</h1>
-          <p className="text-gray-400 text-sm mt-1">Tu tienda TCG de confianza</p>
+          <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-[80px] w-auto object-contain mx-auto mb-2" />
+          <p className="text-gray-400 text-sm">Tu tienda TCG de confianza</p>
         </div>
 
         {/* Card */}

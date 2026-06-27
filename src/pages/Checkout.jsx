@@ -387,11 +387,8 @@ export function Checkout() {
         {/* Checkout header */}
         <header className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur border-b border-white/5">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
-                <span className="material-symbols-outlined text-white text-sm">playing_cards</span>
-              </div>
-              <span className="font-bold text-white hidden sm:block">La Tech TCG</span>
+            <Link to="/" className="flex items-center">
+              <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-[80px] w-auto object-contain" />
             </Link>
             <div className="hidden sm:flex items-center gap-4 text-xs text-gray-400">
               <span className="flex items-center gap-1"><span className="material-symbols-outlined text-green-400 text-sm">lock</span>Pago 100% seguro</span>
