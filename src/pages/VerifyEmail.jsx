@@ -46,16 +46,14 @@ export function VerifyEmail() {
     setLoading(true);
     try {
       const data = await api.auth.verifyEmail(email, fullCode);
-      if (data.accessToken) {
-        Auth.setToken(data.accessToken);
-        const user = data.user ?? null;
-        if (user) Auth.setUser(user);
-        useAuthStore.setState({ user, token: data.accessToken, isLoggedIn: true });
-      }
+      // Backend sets httpOnly cookie on successful verification
+      const user = data.user ?? null;
+      if (user) Auth.setUser(user);
+      useAuthStore.setState({ user, isLoggedIn: !!user });
       showToast('¡Email verificado! Bienvenido.');
       navigate('/');
-    } catch (err) {
-      showToast(err.message || 'Código incorrecto o expirado', 'error');
+    } catch {
+      showToast('Código incorrecto o expirado. Intenta nuevamente.', 'error');
     } finally {
       setLoading(false);
     }
@@ -68,8 +66,8 @@ export function VerifyEmail() {
     try {
       await api.auth.resendVerification(email);
       showToast('Código reenviado a ' + email);
-    } catch (err) {
-      showToast(err.message || 'Error al reenviar el código', 'error');
+    } catch {
+      showToast('Error al reenviar el código. Intenta nuevamente.', 'error');
     } finally {
       setResending(false);
     }

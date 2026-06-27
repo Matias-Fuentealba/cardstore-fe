@@ -31,8 +31,19 @@ import { AdminCards }     from './pages/admin/Cards';
 import { AdminInventory } from './pages/admin/Inventory';
 import { AdminOrders }    from './pages/admin/Orders';
 
+// Waits for backend session hydration before deciding to allow or redirect.
+// Prevents stale localStorage state from granting or blocking access.
 function PrivateRoute({ children, adminOnly = false }) {
-  const { isLoggedIn, user } = useAuthStore();
+  const { isLoggedIn, user, hydrated } = useAuthStore();
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
+        <span className="material-symbols-outlined text-violet-400 text-4xl animate-spin">progress_activity</span>
+      </div>
+    );
+  }
+
   if (!isLoggedIn) return <Navigate to="/login" replace />;
   if (adminOnly && user?.role !== 'admin') return <Navigate to="/" replace />;
   return children;
@@ -48,22 +59,17 @@ function PublicLayout({ children }) {
 }
 
 export default function App() {
-  const initAuth = useAuthStore(s => s.init);
+  const hydrate     = useAuthStore(s => s.hydrate);
   const refreshCart = useCartStore(s => s.refresh);
 
   useEffect(() => {
-    initAuth();
+    hydrate();
     refreshCart();
 
-    // Sync Supabase session changes to Auth/store
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'TOKEN_REFRESHED' && session) {
-        Auth.setToken(session.access_token);
-        useAuthStore.setState({ token: session.access_token });
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
         Auth.clear();
-        useAuthStore.setState({ user: null, token: null, isLoggedIn: false });
+        useAuthStore.setState({ user: null, isLoggedIn: false });
       }
     });
 
@@ -94,6 +100,7 @@ export default function App() {
         <Route path="/deckbuilder" element={<PublicLayout><Deckbuilder /></PublicLayout>} />
         <Route path="/sellado"     element={<PublicLayout><ComingSoon /></PublicLayout>} />
         <Route path="/terminos"    element={<PublicLayout><TermsAndConditions /></PublicLayout>} />
+
         {/* Admin */}
         <Route path="/admin/cards"     element={<PrivateRoute adminOnly><AdminLayout><AdminCards /></AdminLayout></PrivateRoute>} />
         <Route path="/admin/inventory" element={<PrivateRoute adminOnly><AdminLayout><AdminInventory /></AdminLayout></PrivateRoute>} />

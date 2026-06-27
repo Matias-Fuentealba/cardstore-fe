@@ -267,6 +267,7 @@ export function Checkout() {
   };
 
   const confirmOrder = async () => {
+    if (confirming) return;
     setConfirming(true);
     try {
 
@@ -356,7 +357,13 @@ export function Checkout() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (ex) {
-      showToast(ex.error || ex.message || 'Error al confirmar el pedido', 'error');
+      console.error('[Checkout] confirmOrder:', ex);
+      showToast(
+        ex.status === 409 ? 'Uno de los productos ya no tiene stock suficiente.' :
+        ex.status === 400 ? 'Datos de envío inválidos. Revisa el formulario.' :
+        'No se pudo procesar el pedido. Intenta nuevamente.',
+        'error'
+      );
     } finally {
       setConfirming(false);
     }

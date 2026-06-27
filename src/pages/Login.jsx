@@ -33,7 +33,7 @@ export function Login() {
       if (err.code === 'EMAIL_NOT_VERIFIED' || err.status === 403) {
         setUnverifiedEmail(loginForm.email);
       } else {
-        showToast(err.message || 'Credenciales incorrectas', 'error');
+        showToast('Email o contraseña incorrectos.', 'error');
       }
     } finally {
       setLoading(false);
@@ -46,8 +46,8 @@ export function Login() {
     try {
       await api.auth.resendVerification(unverifiedEmail);
       showToast('Código reenviado a ' + unverifiedEmail);
-    } catch (err) {
-      showToast(err.message || 'Error al reenviar el código', 'error');
+    } catch {
+      showToast('Error al reenviar el código. Intenta nuevamente.', 'error');
     } finally {
       setResendingVerif(false);
     }
@@ -82,7 +82,11 @@ export function Login() {
         setTab('login');
       }
     } catch (err) {
-      showToast(err.message || 'Error al registrar', 'error');
+      showToast(
+        err.status === 409 ? 'Ya existe una cuenta con ese email.' :
+        'Error al crear la cuenta. Intenta nuevamente.',
+        'error'
+      );
     } finally {
       setLoading(false);
     }

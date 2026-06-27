@@ -84,7 +84,8 @@ export function Search() {
       await refreshCart();
       showToast('Agregado al carrito');
     } catch (ex) {
-      showToast(ex.message || 'Error al agregar', 'error');
+      console.error('[Search] addToCart:', ex);
+      showToast('No se pudo agregar al carrito. Intenta nuevamente.', 'error');
     }
   };
 

@@ -1,39 +1,37 @@
 /**
  * La Tech TCG — API Client
+ * Auth tokens are managed exclusively via httpOnly cookies set by the backend.
+ * Only non-sensitive user fields are persisted in localStorage for UX caching.
  */
-import { supabase } from '../lib/supabase';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
+export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
 
-// ─── Token helpers ────────────────────────────────────────────────────────────
+const SAFE_USER_FIELDS = ['id', 'firstName', 'lastName', 'email', 'role', 'avatar'];
+
+// ─── User cache (no tokens, no PII) ──────────────────────────────────────────
 export const Auth = {
-  getToken() { return localStorage.getItem('accessToken'); },
-  setToken(t) { localStorage.setItem('accessToken', t); },
-  removeToken() { localStorage.removeItem('accessToken'); },
   getUser() {
     try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
   },
-  setUser(u) { localStorage.setItem('user', JSON.stringify(u)); },
-  removeUser() { localStorage.removeItem('user'); },
-  isLoggedIn() { return !!this.getToken(); },
-  clear() { this.removeToken(); this.removeUser(); },
-  isSupabaseToken(t = this.getToken()) {
-    try {
-      const { iss } = JSON.parse(atob(t.split('.')[1]));
-      return typeof iss === 'string' && iss.includes('supabase');
-    } catch { return false; }
+  setUser(u) {
+    if (!u) { localStorage.removeItem('user'); return; }
+    const safe = Object.fromEntries(
+      SAFE_USER_FIELDS.filter(k => k in u).map(k => [k, u[k]])
+    );
+    localStorage.setItem('user', JSON.stringify(safe));
   },
+  removeUser() { localStorage.removeItem('user'); },
+  clear() { this.removeUser(); },
 };
 
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
 async function apiFetch(path, options = {}, retry = true) {
+  const isFormData = options.body instanceof FormData;
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     'ngrok-skip-browser-warning': '1',
     ...options.headers,
   };
-  const token = Auth.getToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: 'include',
@@ -42,27 +40,10 @@ async function apiFetch(path, options = {}, retry = true) {
   });
 
   if (res.status === 401 && retry) {
-    // If it's a Supabase token, the backend doesn't support it yet — don't redirect
-    if (Auth.isSupabaseToken()) {
-      const err = await res.json().catch(() => ({}));
-      throw { status: 401, ...err };
-    }
-
-    // 1. Try refreshing via Supabase (for Google OAuth users)
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token && session.access_token !== token) {
-        Auth.setToken(session.access_token);
-        return apiFetch(path, options, false);
-      }
-    } catch { /* ignore */ }
-
-    // 2. Fall back to backend refresh (for email/password users)
-    const refreshed = await api.auth.refresh().catch(() => null);
-    if (refreshed) {
-      Auth.setToken(refreshed.accessToken);
+      await api.auth.refresh();
       return apiFetch(path, options, false);
-    } else {
+    } catch {
       Auth.clear();
       window.location.href = '/login';
       return;
@@ -78,7 +59,7 @@ async function apiFetch(path, options = {}, retry = true) {
 }
 
 // ─── Shorthand helpers ────────────────────────────────────────────────────────
-const GET    = (path, opts) => apiFetch(path, { method: 'GET', ...opts });
+const GET    = (path, opts)       => apiFetch(path, { method: 'GET',    ...opts });
 const POST   = (path, body, opts) => apiFetch(path, { method: 'POST',   body: JSON.stringify(body), ...opts });
 const PATCH  = (path, body, opts) => apiFetch(path, { method: 'PATCH',  body: JSON.stringify(body), ...opts });
 const DELETE = (path, opts)       => apiFetch(path, { method: 'DELETE', ...opts });
@@ -97,6 +78,21 @@ export const api = {
     resetPassword: (token, password) => POST('/auth/reset-password', { token, password }),
     verifyEmail: (email, code) => POST('/auth/verify-email', { email, code }),
     resendVerification: (email) => POST('/auth/resend-verification', { email }),
+    // One-time exchange: Supabase OAuth token → backend session cookie
+    socialLogin: (supabaseToken) => fetch(`${API_BASE}/auth/social-login`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': '1',
+        'Authorization': `Bearer ${supabaseToken}`,
+      },
+      body: JSON.stringify({}),
+    }).then(async res => {
+      if (!res.ok) throw { status: res.status, ...(await res.json().catch(() => ({}))) };
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    }),
   },
 
   cards: {
@@ -157,11 +153,7 @@ export const api = {
     uploadAvatar: (file) => {
       const form = new FormData();
       form.append('avatar', file);
-      return apiFetch('/users/me/avatar', {
-        method: 'POST',
-        body: form,
-        headers: { Authorization: `Bearer ${Auth.getToken()}` },
-      });
+      return apiFetch('/users/me/avatar', { method: 'POST', body: form });
     },
     delete: () => DELETE('/users/me'),
     orders: (page = 1) => GET(`/users/me/orders?page=${page}`),
@@ -195,7 +187,7 @@ export const api = {
       delete: (id) => DELETE(`/admin/cards/${id}`),
       clearCatalog: (password) => DELETE('/admin/cards', {
         body: JSON.stringify({ password }),
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Auth.getToken()}` },
+        headers: { 'Content-Type': 'application/json' },
       }),
       importSet: (payload) => POST('/admin/sets/import', payload),
     },
@@ -205,7 +197,7 @@ export const api = {
       bulkUpload: (rows) => apiFetch('/admin/inventory/bulk', {
         method: 'POST',
         body: JSON.stringify(rows),
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Auth.getToken()}` },
+        headers: { 'Content-Type': 'application/json' },
       }),
     },
     orders: {

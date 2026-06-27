@@ -165,8 +165,13 @@ export function CardDetail() {
       setAddState('done');
       setTimeout(() => setAddState('idle'), 2000);
     } catch (ex) {
+      console.error('[CardDetail] addToCart:', ex);
       setAddState('idle');
-      showToast(ex.message || ex.error || 'Error al agregar al carrito', 'error');
+      showToast(
+        ex.status === 409 ? 'No hay suficiente stock disponible.' :
+        'No se pudo agregar al carrito. Intenta nuevamente.',
+        'error'
+      );
     }
   };
 
@@ -183,7 +188,8 @@ export function CardDetail() {
         showToast('Quitado de la wishlist');
       }
     } catch (ex) {
-      showToast(ex.message || ex.error || 'Error', 'error');
+      console.error('[CardDetail] wishlist:', ex);
+      showToast('Error al actualizar la wishlist. Intenta nuevamente.', 'error');
     }
   };
 

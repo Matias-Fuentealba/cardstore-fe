@@ -1,89 +1,81 @@
 import { create } from 'zustand';
-import { Auth, api } from '../api';
+import { Auth, api, API_BASE } from '../api';
 import { supabase } from '../lib/supabase';
 
-let _refreshTimer = null;
-
-function scheduleTokenRefresh(token) {
-  clearTimeout(_refreshTimer);
-  if (!token) return;
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const msUntilExpiry = payload.exp * 1000 - Date.now();
-    const msUntilRefresh = msUntilExpiry - 60_000;
-    if (msUntilRefresh <= 0) return;
-    _refreshTimer = setTimeout(async () => {
-      const data = await api.auth.refresh().catch(() => null);
-      if (data?.accessToken) {
-        Auth.setToken(data.accessToken);
-        useAuthStore.setState({ token: data.accessToken });
-        scheduleTokenRefresh(data.accessToken);
-      }
-    }, msUntilRefresh);
-  } catch { /* no es JWT válido */ }
-}
-
-export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set) => ({
+  // Optimistic cache from localStorage (safe fields only — no tokens, no PII).
+  // Replaced by backend truth after hydrate() resolves.
   user: Auth.getUser(),
-  token: Auth.getToken(),
-  isLoggedIn: Auth.isLoggedIn(),
+  isLoggedIn: !!Auth.getUser(),
+  hydrated: false,
+
+  // Bootstrap: verify current session via backend cookie, resolve auth state.
+  // Uses a raw fetch to avoid the 401-redirect logic in apiFetch — a missing
+  // session on a public page is expected, not an error.
+  hydrate: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/users/me`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
+      });
+      if (!res.ok) throw new Error('unauthenticated');
+      const user = await res.json();
+      Auth.setUser(user);
+      set({ user, isLoggedIn: true, hydrated: true });
+    } catch {
+      Auth.removeUser();
+      set({ user: null, isLoggedIn: false, hydrated: true });
+    }
+  },
 
   login: async (email, password, remember = false) => {
     const data = await api.auth.login(email, password, remember);
-    Auth.setToken(data.accessToken);
+    // Backend sets httpOnly session cookie; we only cache non-sensitive fields.
     Auth.setUser(data.user);
-    scheduleTokenRefresh(data.accessToken);
-    set({ user: data.user, token: data.accessToken, isLoggedIn: true });
-    // Sincronizar badge del carrito con el carrito del usuario autenticado
+    set({ user: data.user, isLoggedIn: true });
     const { useCartStore } = await import('./cartStore');
     useCartStore.getState().refresh().catch(() => {});
     return data;
   },
 
-  // Called from AuthCallback after Google OAuth success
+  // Called from AuthCallback after Google OAuth success.
   loginWithSupabase: async (session) => {
     const { access_token, user: supaUser } = session;
-    Auth.setToken(access_token);
-
     let user;
+
     try {
-      // Backend now accepts Supabase JWTs and does upsert — get real profile with role
-      user = await api.user.me();
+      // Exchange Supabase token for backend session cookie via dedicated endpoint.
+      const res = await api.auth.socialLogin(access_token);
+      user = res?.user ?? res;
     } catch {
-      // Fallback: build from Supabase metadata if backend is unreachable
-      const meta = supaUser.user_metadata ?? {};
-      const fullName = (meta.full_name ?? meta.name ?? '').trim();
-      const parts = fullName.split(' ');
-      user = {
-        id: supaUser.id,
-        email: supaUser.email,
-        firstName: parts[0] ?? '',
-        lastName: parts.slice(1).join(' ') ?? '',
-        avatar: meta.avatar_url ?? meta.picture ?? null,
-        role: 'customer',
-      };
+      // Fallback: call /users/me with the Supabase Bearer token directly.
+      // Backend must validate Supabase JWT and set its own session cookie here.
+      const meRes = await fetch(`${API_BASE}/users/me`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': '1',
+          'Authorization': `Bearer ${access_token}`,
+        },
+      });
+      if (!meRes.ok) throw new Error('Social login failed');
+      user = await meRes.json();
     }
 
     Auth.setUser(user);
-    set({ user, token: access_token, isLoggedIn: true });
+    set({ user, isLoggedIn: true });
     return { user };
   },
 
   logout: async () => {
-    await api.auth.logout().catch(() => {});
+    await api.auth.logout().catch(() => {}); // backend clears httpOnly cookie
     await supabase.auth.signOut().catch(() => {});
-    clearTimeout(_refreshTimer);
     Auth.clear();
-    set({ user: null, token: null, isLoggedIn: false });
+    set({ user: null, isLoggedIn: false });
   },
 
   setUser: (user) => {
     Auth.setUser(user);
     set({ user });
-  },
-
-  init: () => {
-    const token = Auth.getToken();
-    if (token) scheduleTokenRefresh(token);
   },
 }));

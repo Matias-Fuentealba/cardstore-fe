@@ -3,6 +3,16 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api, formatCLP } from '../api';
 import { useCartStore } from '../store/cartStore';
 
+async function fetchWithRetry(fn, attempts = 3, delayMs = 1500) {
+  try {
+    return await fn();
+  } catch (err) {
+    if (attempts <= 1) throw err;
+    await new Promise(r => setTimeout(r, delayMs));
+    return fetchWithRetry(fn, attempts - 1, delayMs * 2);
+  }
+}
+
 // ─── Check animation ──────────────────────────────────────────────────────────
 function CheckAnimation() {
   return (
@@ -24,7 +34,6 @@ function CheckAnimation() {
   );
 }
 
-// ─── Detail raow ───────────────────────────────────────────────────────────────
 function DetailRow({ label, value, accent = false }) {
   return (
     <div className="flex justify-between text-sm">
@@ -41,9 +50,10 @@ export function PaymentSuccess() {
   const provider  = searchParams.get('provider') ?? 'transbank';
   const refreshCart = useCartStore(s => s.refresh);
 
-  const [payment, setPayment] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);
+  const [payment,  setPayment]  = useState(null);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!tokenTrx) {
@@ -51,19 +61,30 @@ export function PaymentSuccess() {
       setLoading(false);
       return;
     }
-    const fetchStatus = provider === 'mercadopago'
+
+    setLoading(true);
+    setError(null);
+
+    const fetchStatus = () => provider === 'mercadopago'
       ? api.mpPayments.getStatus(tokenTrx)
       : api.payments.getStatus(tokenTrx);
 
-    fetchStatus
+    fetchWithRetry(fetchStatus, 3, 1500)
       .then(data => {
         setPayment(data);
         setLoading(false);
-        // Sincronizar el carrito local (el backend ya lo vació al confirmar el pago)
         refreshCart();
       })
-      .catch(() => { setError('No se pudo obtener el resultado del pago.'); setLoading(false); });
-  }, [tokenTrx, provider]);
+      .catch((ex) => {
+        console.error('[PaymentSuccess] fetchStatus:', ex);
+        setError('No se pudo verificar el resultado del pago.');
+        setLoading(false);
+      });
+  }, [tokenTrx, provider, retryKey]);
+
+  const handleRetry = () => {
+    setRetryKey(k => k + 1);
+  };
 
   return (
     <>
@@ -85,12 +106,25 @@ export function PaymentSuccess() {
               <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
                 <span className="material-symbols-outlined text-red-400 text-4xl">error</span>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Error</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Error al verificar el pago</h2>
               <p className="text-gray-400 mb-8">{error}</p>
-              <Link to="/cart" className="px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition-colors inline-flex items-center gap-2">
-                <span className="material-symbols-outlined text-base">shopping_cart</span>
-                Volver al carrito
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={handleRetry}
+                  className="px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition-colors inline-flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-base">refresh</span>
+                  Reintentar
+                </button>
+                <Link to="/cart" className="px-8 py-3 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:border-violet-500 transition-colors inline-flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-base">shopping_cart</span>
+                  Volver al carrito
+                </Link>
+              </div>
+              <p className="text-xs text-gray-500 mt-6">
+                Si completaste el pago y el problema persiste, contáctanos a{' '}
+                <span className="text-violet-400">pagos@latechtcg.com</span>
+              </p>
             </div>
           )}
 

@@ -101,8 +101,13 @@ function CardItem({ card, viewMode }) {
       setAddState('done');
       setTimeout(() => setAddState('idle'), 1500);
     } catch (ex) {
+      console.error('[Singles] addToCart:', ex);
       setAddState('idle');
-      showToast(ex.message || ex.error || 'Error al agregar al carrito', 'error');
+      showToast(
+        ex.status === 409 ? 'No hay suficiente stock disponible.' :
+        'No se pudo agregar al carrito. Intenta nuevamente.',
+        'error'
+      );
     }
   };
 
@@ -113,7 +118,8 @@ function CardItem({ card, viewMode }) {
       await api.user.addToWishlist(card.id);
       showToast('Añadido a tu wishlist');
     } catch (ex) {
-      showToast(ex.message || ex.error || 'Error', 'error');
+      console.error('[Singles] wishlist:', ex);
+      showToast('Error al actualizar la wishlist. Intenta nuevamente.', 'error');
     }
   };
 
