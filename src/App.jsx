@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useCartStore } from './store/cartStore';
-import { Auth, setSupabearer, clearSupabearer } from './api';
+import { Auth, setBearer, clearBearer } from './api';
 import { supabase } from './lib/supabase';
 import { Toast } from './components/ui/Toast';
 import { Navbar } from './components/layout/Navbar';
@@ -68,11 +68,10 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'TOKEN_REFRESHED' && session?.access_token) {
-        // Keep the in-memory Bearer token current for Supabase OAuth users.
-        setSupabearer(session.access_token);
+        setBearer(session.access_token);
       }
       if (event === 'SIGNED_OUT') {
-        clearSupabearer();
+        clearBearer();
         Auth.clear();
         useAuthStore.setState({ user: null, isLoggedIn: false });
       }

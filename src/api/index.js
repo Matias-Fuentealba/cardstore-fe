@@ -8,12 +8,12 @@ export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/a
 
 const SAFE_USER_FIELDS = ['id', 'firstName', 'lastName', 'email', 'role', 'avatar'];
 
-// In-memory Bearer token for Supabase OAuth users.
-// Never persisted to localStorage. Cleared on logout or page reload.
-// Cookie-authenticated users (email/password) don't use this.
-let _supabearer = null;
-export const setSupabearer = (t) => { _supabearer = t; };
-export const clearSupabearer = () => { _supabearer = null; };
+// In-memory access token — never persisted to localStorage.
+// Set on every login (email/password and Google OAuth). Cleared on logout or page reload.
+// Refresh token lives in the backend httpOnly cookie; access token lives here.
+let _bearer = null;
+export const setBearer = (t) => { _bearer = t; };
+export const clearBearer = () => { _bearer = null; };
 
 // ─── User cache (no tokens, no PII) ──────────────────────────────────────────
 export const Auth = {
@@ -37,7 +37,7 @@ async function apiFetch(path, options = {}, retry = true) {
   const headers = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     'ngrok-skip-browser-warning': '1',
-    ...(_supabearer ? { 'Authorization': `Bearer ${_supabearer}` } : {}),
+    ...(_bearer ? { 'Authorization': `Bearer ${_bearer}` } : {}),
     ...options.headers,
   };
 
@@ -49,9 +49,11 @@ async function apiFetch(path, options = {}, retry = true) {
 
   if (res.status === 401 && retry) {
     try {
-      await api.auth.refresh();
+      const refreshed = await api.auth.refresh();
+      if (refreshed?.accessToken) setBearer(refreshed.accessToken);
       return apiFetch(path, options, false);
     } catch {
+      clearBearer();
       Auth.clear();
       window.location.href = '/login';
       return;

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { api, Auth } from '../api';
+import { api, Auth, setBearer } from '../api';
 import { useAuthStore } from '../store/authStore';
 import { showToast } from '../components/ui/Toast';
 
@@ -46,10 +46,10 @@ export function VerifyEmail() {
     setLoading(true);
     try {
       const data = await api.auth.verifyEmail(email, fullCode);
-      // Backend sets httpOnly cookie on successful verification
+      if (data.accessToken) setBearer(data.accessToken);
       const user = data.user ?? null;
       if (user) Auth.setUser(user);
-      useAuthStore.setState({ user, isLoggedIn: !!user });
+      useAuthStore.setState({ user, isLoggedIn: !!user, hydrated: true, _loginAt: Date.now() });
       showToast('¡Email verificado! Bienvenido.');
       navigate('/');
     } catch {

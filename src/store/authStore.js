@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Auth, api, API_BASE, setSupabearer, clearSupabearer } from '../api';
+import { Auth, api, API_BASE, setBearer, clearBearer } from '../api';
 import { supabase } from '../lib/supabase';
 
 export const useAuthStore = create((set, get) => ({
@@ -31,11 +31,11 @@ export const useAuthStore = create((set, get) => ({
       // 1. Try cookie auth (no Bearer)
       let res = await tryMe(null);
 
-      // 2. If cookie fails, check if Supabase has a session (new tab / page reload)
+      // 2. If cookie fails, check if Supabase has a session (new tab / page reload for OAuth users)
       if (!res.ok) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
-          setSupabearer(session.access_token);
+          setBearer(session.access_token);
           res = await tryMe(session.access_token);
         }
       }
@@ -51,7 +51,7 @@ export const useAuthStore = create((set, get) => ({
         set({ hydrated: true });
         return;
       }
-      clearSupabearer();
+      clearBearer();
       Auth.removeUser();
       set({ user: null, isLoggedIn: false, hydrated: true });
     }
@@ -59,7 +59,7 @@ export const useAuthStore = create((set, get) => ({
 
   login: async (email, password, remember = false) => {
     const data = await api.auth.login(email, password, remember);
-    // Backend sets httpOnly session cookie; we only cache non-sensitive fields.
+    if (data.accessToken) setBearer(data.accessToken);
     Auth.setUser(data.user);
     set({ user: data.user, isLoggedIn: true, hydrated: true, _loginAt: Date.now() });
     const { useCartStore } = await import('./cartStore');
@@ -72,10 +72,7 @@ export const useAuthStore = create((set, get) => ({
     const { access_token, user: supaUser } = session;
     let user;
 
-    // Keep the Supabase token in memory so all apiFetch calls include it as
-    // Bearer. This is the auth mechanism for Google OAuth users until the
-    // backend establishes a proper session cookie for them.
-    setSupabearer(access_token);
+    setBearer(access_token);
 
     try {
       // Exchange Supabase token for backend session cookie via dedicated endpoint.
@@ -98,7 +95,7 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     await api.auth.logout().catch(() => {}); // backend clears httpOnly cookie
     await supabase.auth.signOut().catch(() => {});
-    clearSupabearer();
+    clearBearer();
     Auth.clear();
     set({ user: null, isLoggedIn: false });
   },
