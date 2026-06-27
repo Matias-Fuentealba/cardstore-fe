@@ -10,27 +10,48 @@ export const useAuthStore = create((set, get) => ({
   hydrated: false,
   _loginAt: 0, // timestamp of last explicit login, used to detect race with hydrate()
 
-  // Bootstrap: verify current session via backend cookie, resolve auth state.
-  // Uses a raw fetch to avoid the 401-redirect logic in apiFetch — a missing
-  // session on a public page is expected, not an error.
+  // Bootstrap: verify current session, resolve auth state.
+  // Order of attempts:
+  //   1. Backend cookie (email/password users)
+  //   2. Supabase session (Google OAuth users — persisted by Supabase SDK across tabs/reloads)
+  //   3. Give up → logged out
   hydrate: async () => {
     const fetchStarted = Date.now();
+
+    const tryMe = (token) => fetch(`${API_BASE}/users/me`, {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': '1',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+    });
+
     try {
-      const res = await fetch(`${API_BASE}/users/me`, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
-      });
+      // 1. Try cookie auth (no Bearer)
+      let res = await tryMe(null);
+
+      // 2. If cookie fails, check if Supabase has a session (new tab / page reload)
+      if (!res.ok) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          setSupabearer(session.access_token);
+          res = await tryMe(session.access_token);
+        }
+      }
+
       if (!res.ok) throw new Error('unauthenticated');
+
       const user = await res.json();
       Auth.setUser(user);
-      set({ user, isLoggedIn: true, hydrated: true });
+      set({ user, isLoggedIn: true, hydrated: true, _loginAt: Date.now() });
     } catch {
-      // If a login (email or OAuth) happened while this fetch was in-flight,
-      // don't overwrite the auth state it established — just mark as hydrated.
+      // If a login happened while this fetch was in-flight, don't clear that state.
       if (get()._loginAt > fetchStarted) {
         set({ hydrated: true });
         return;
       }
+      clearSupabearer();
       Auth.removeUser();
       set({ user: null, isLoggedIn: false, hydrated: true });
     }
