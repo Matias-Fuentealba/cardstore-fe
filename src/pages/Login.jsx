@@ -97,7 +97,7 @@ export function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-[80px] w-auto object-contain mx-auto mb-2" />
+          <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-[104px] w-auto object-contain mx-auto mb-2" />
           <p className="text-gray-400 text-sm">Tu tienda TCG de confianza</p>
         </div>
 
