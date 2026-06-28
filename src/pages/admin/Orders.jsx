@@ -33,7 +33,7 @@ function isRetiroOrder(order) {
 }
 
 // ─── Order detail modal ───────────────────────────────────────────────────────
-function OrderModal({ order, onClose, onStatusChange }) {
+function OrderModal({ order, onClose, onStatusChange, onEditShipping }) {
   const s            = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
   const nextStatuses = NEXT_STATUSES[order.status] || [];
   const customer     = [order.shipping?.firstName, order.shipping?.lastName].filter(Boolean).join(' ') || '—';
@@ -122,6 +122,15 @@ function OrderModal({ order, onClose, onStatusChange }) {
                   <span className="material-symbols-outlined text-gray-500 text-base">pin</span>
                   <span className="text-sm text-gray-300 font-mono">{order.trackingNumber}</span>
                 </div>
+              )}
+              {!retiro && (
+                <button
+                  onClick={onEditShipping}
+                  className="mt-1 flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">edit</span>
+                  {order.trackingNumber ? 'Editar datos de envío' : 'Agregar tracking / costo'}
+                </button>
               )}
             </div>
           </div>
@@ -222,41 +231,70 @@ function OrderModal({ order, onClose, onStatusChange }) {
   );
 }
 
-// ─── Shipping number modal ────────────────────────────────────────────────────
-function ShippingModal({ orderId, onConfirm, onClose }) {
-  const [tracking, setTracking] = useState('');
+// ─── Shipping data modal ──────────────────────────────────────────────────────
+function ShippingModal({ orderId, defaultTracking = '', defaultCost = '', onConfirm, onClose }) {
+  const [tracking, setTracking] = useState(defaultTracking);
+  const [cost, setCost]         = useState(defaultCost !== null && defaultCost !== undefined && defaultCost !== 0 ? String(defaultCost) : '');
+
+  const handleConfirm = () => onConfirm(tracking.trim(), cost.trim());
+
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-10 h-10 bg-violet-600/20 rounded-xl flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-outlined text-violet-400">local_shipping</span>
           </div>
           <div>
-            <h3 className="font-bold text-white">Número de envío</h3>
+            <h3 className="font-bold text-white">Datos de envío</h3>
             <p className="text-xs text-gray-400">Orden <span className="font-semibold text-violet-400">#{orderId}</span></p>
           </div>
         </div>
-        <div className="mb-5">
-          <label className="block text-sm font-semibold text-gray-300 mb-2">Número de seguimiento (Starken / courier)</label>
-          <input
-            type="text"
-            value={tracking}
-            onChange={e => setTracking(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && tracking.trim()) onConfirm(tracking.trim()); }}
-            placeholder="Ej: 1234567890"
-            autoFocus
-            className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
-          />
+
+        <div className="space-y-4 mb-5">
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-2">
+              Número de seguimiento <span className="text-gray-500 font-normal">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={tracking}
+              onChange={e => setTracking(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleConfirm(); }}
+              placeholder="Ej: 1234567890"
+              autoFocus
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors font-mono"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-2">
+              Costo real de envío <span className="text-gray-500 font-normal">(opcional)</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-semibold">$</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={cost}
+                onChange={e => setCost(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleConfirm(); }}
+                placeholder="Ej: 5500"
+                className="w-full pl-7 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+              />
+            </div>
+            <p className="text-xs text-gray-600 mt-1">Lo que pagaste al courier. Deja vacío para mantener el costo estimado.</p>
+          </div>
         </div>
+
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 text-gray-300 font-semibold text-sm rounded-xl hover:bg-white/5 transition">Cancelar</button>
           <button
-            onClick={() => { if (tracking.trim()) onConfirm(tracking.trim()); }}
+            onClick={handleConfirm}
             className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm rounded-xl transition flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-base">check</span>
-            Confirmar envío
+            Guardar
           </button>
         </div>
       </div>
@@ -355,22 +393,26 @@ export function AdminOrders() {
   async function handleStatusChange(orderId, newStatus) {
     if (!newStatus) return;
     if (newStatus === 'shipped') {
-      setShippingModal({ orderId });
+      const ord = orders.find(o => o.id === orderId) || selectedOrder;
+      setShippingModal({ orderId, status: 'shipped', tracking: ord?.trackingNumber || '', cost: ord?.shippingCost ?? '' });
       return;
     }
-    await doUpdateStatus(orderId, newStatus, null);
+    await doUpdateStatus(orderId, newStatus, null, null);
   }
 
-  async function doUpdateStatus(orderId, newStatus, trackingNumber) {
+  async function doUpdateStatus(orderId, newStatus, tracking, cost) {
     try {
-      await api.admin.orders.updateStatus(orderId, newStatus, trackingNumber ? { trackingNumber } : {});
-      setOrders(prev => prev.map(o =>
-        o.id === orderId ? { ...o, status: newStatus, ...(trackingNumber ? { trackingNumber } : {}) } : o
-      ));
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder(prev => ({ ...prev, status: newStatus, ...(trackingNumber ? { trackingNumber } : {}) }));
-      }
-      showToast(`Orden ${orderId} → ${STATUS_CONFIG[newStatus]?.label}${trackingNumber ? ' · ' + trackingNumber : ''}`);
+      const extra = {};
+      if (tracking) extra.trackingNumber = tracking;
+      if (cost !== null && cost !== undefined && cost !== '') extra.shippingCost = parseInt(cost, 10);
+
+      await api.admin.orders.updateStatus(orderId, newStatus, extra);
+
+      const merged = { status: newStatus, ...extra };
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...merged } : o));
+      if (selectedOrder?.id === orderId) setSelectedOrder(prev => ({ ...prev, ...merged }));
+
+      showToast(`Orden ${orderId} · ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
     } catch (ex) {
       showToast(ex.error || 'Error al actualizar', 'error');
     }
@@ -578,16 +620,25 @@ export function AdminOrders() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onStatusChange={(id, status) => handleStatusChange(id, status)}
+          onEditShipping={() => setShippingModal({
+            orderId: selectedOrder.id,
+            status: selectedOrder.status,
+            tracking: selectedOrder.trackingNumber || '',
+            cost: selectedOrder.shippingCost ?? '',
+          })}
         />
       )}
 
-      {/* Shipping number modal */}
+      {/* Shipping data modal */}
       {shippingModal && (
         <ShippingModal
           orderId={shippingModal.orderId}
-          onConfirm={async (tracking) => {
+          defaultTracking={shippingModal.tracking}
+          defaultCost={shippingModal.cost}
+          onConfirm={async (tracking, cost) => {
+            const snap = shippingModal;
             setShippingModal(null);
-            await doUpdateStatus(shippingModal.orderId, 'shipped', tracking);
+            await doUpdateStatus(snap.orderId, snap.status, tracking, cost);
           }}
           onClose={() => setShippingModal(null)}
         />

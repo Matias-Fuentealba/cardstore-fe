@@ -37,15 +37,10 @@ export function AdminSidebar() {
           ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-white/5">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-base">playing_cards</span>
-            </div>
-            <div>
-              <div className="font-bold text-white text-sm">La Tech TCG</div>
-              <div className="text-xs text-gray-500">Panel Admin</div>
-            </div>
+        <div className="px-5 py-4 border-b border-white/5">
+          <Link to="/" className="block">
+            <img src="https://i.imgur.com/dVTFMJf.png" alt="La Tech TCG" className="h-12 w-auto object-contain" />
+            <p className="text-[11px] text-gray-500 mt-1 font-semibold tracking-widest uppercase">Panel Admin</p>
           </Link>
         </div>
 
