@@ -41,11 +41,10 @@ const TIER_STYLES = {
 };
 
 const TABS = [
-  { id: 'pedidos',        icon: 'receipt_long',     label: 'Mis pedidos' },
-  { id: 'wishlist',       icon: 'favorite',         label: 'Wishlist' },
-  { id: 'datos',          icon: 'manage_accounts',  label: 'Mis datos' },
-  { id: 'notificaciones', icon: 'notifications',    label: 'Notificaciones' },
-  { id: 'seguridad',      icon: 'shield',           label: 'Seguridad' },
+  { id: 'pedidos',  icon: 'receipt_long',    label: 'Mis pedidos' },
+  { id: 'wishlist', icon: 'favorite',        label: 'Wishlist' },
+  { id: 'datos',    icon: 'manage_accounts', label: 'Mis datos' },
+  { id: 'seguridad', icon: 'shield',         label: 'Seguridad' },
 ];
 
 // ─── Form input ───────────────────────────────────────────────────────────────
@@ -64,19 +63,6 @@ function FInput({ label, type = 'text', value, onChange, disabled, extra }) {
         {extra}
       </div>
     </div>
-  );
-}
-
-// ─── Toggle switch ────────────────────────────────────────────────────────────
-function Toggle({ checked, onChange }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-violet-600' : 'bg-white/20'}`}
-    >
-      <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${checked ? 'translate-x-5' : ''}`} />
-    </button>
   );
 }
 
@@ -417,51 +403,6 @@ function PanelDatos({ user, onSave }) {
   );
 }
 
-function PanelNotificaciones() {
-  const NOTIFS = [
-    { key: 'orderStatus',       label: 'Actualizaciones de pedidos', desc: 'Estado de tus envíos en tiempo real', default: true },
-    { key: 'wishlistRestock',   label: 'Restock de wishlist',        desc: 'Cuando una carta de tu wishlist vuelve al stock', default: true },
-    { key: 'offers',            label: 'Ofertas exclusivas',         desc: 'Promociones y descuentos para miembros', default: true },
-    { key: 'priceAlerts',       label: 'Alertas de precio',          desc: 'Cuando baja el precio de una carta en tu wishlist', default: false },
-    { key: 'newsletter',        label: 'Newsletter semanal',         desc: 'Resumen de novedades y análisis del meta', default: false },
-    { key: 'pushNotifications', label: 'Notificaciones push',        desc: 'Alertas en el navegador', default: false },
-  ];
-  const [prefs, setPrefs] = useState(() => Object.fromEntries(NOTIFS.map(n => [n.key, n.default])));
-
-  const toggle = (key) => setPrefs(p => ({ ...p, [key]: !p[key] }));
-
-  const handleSave = async () => {
-    try {
-      await api.user.updateNotifications(prefs);
-      showToast('Preferencias guardadas');
-    } catch (ex) {
-      showToast(ex.error || 'Error al guardar preferencias', 'error');
-    }
-  };
-
-  return (
-    <div>
-      <h2 className="text-2xl font-bold text-white mb-6">Notificaciones</h2>
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-        {NOTIFS.map(({ key, label, desc }, i) => (
-          <div key={key} className={`flex items-center justify-between py-4 ${i < NOTIFS.length - 1 ? 'border-b border-white/5' : ''}`}>
-            <div>
-              <p className="text-sm font-bold text-white">{label}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
-            </div>
-            <Toggle checked={prefs[key]} onChange={() => toggle(key)} />
-          </div>
-        ))}
-        <div className="mt-5 flex justify-end">
-          <button onClick={handleSave} className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl transition-colors">
-            Guardar preferencias
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PanelSeguridad({ onLogout }) {
   const [pwdForm, setPwdForm] = useState({ current: '', new: '', confirm: '' });
   const [pwdSaving, setPwdSaving] = useState(false);
@@ -669,11 +610,10 @@ export function Profile() {
             </div>
 
             {/* Panels */}
-            {tab === 'pedidos'        && <PanelPedidos orders={orders} loading={loadingOrders} />}
-            {tab === 'wishlist'       && <PanelWishlist items={wishlist} onRemove={handleRemoveWishlist} />}
-            {tab === 'datos'          && <PanelDatos user={user} onSave={u => { setUserData(u); setUser(u); }} />}
-            {tab === 'notificaciones' && <PanelNotificaciones />}
-            {tab === 'seguridad'      && <PanelSeguridad onLogout={handleLogout} />}
+            {tab === 'pedidos'  && <PanelPedidos orders={orders} loading={loadingOrders} />}
+            {tab === 'wishlist' && <PanelWishlist items={wishlist} onRemove={handleRemoveWishlist} />}
+            {tab === 'datos'    && <PanelDatos user={user} onSave={u => { setUserData(u); setUser(u); }} />}
+            {tab === 'seguridad' && <PanelSeguridad onLogout={handleLogout} />}
           </div>
         </div>
       </div>
