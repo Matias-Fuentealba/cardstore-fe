@@ -6,7 +6,7 @@
 
 export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
 
-const SAFE_USER_FIELDS = ['id', 'firstName', 'lastName', 'email', 'role', 'avatar'];
+const SAFE_USER_FIELDS = ['id', 'firstName', 'lastName', 'email', 'role', 'avatar', 'provider'];
 
 // In-memory access token — never persisted to localStorage.
 // Set on every login (email/password and Google OAuth). Cleared on logout or page reload.

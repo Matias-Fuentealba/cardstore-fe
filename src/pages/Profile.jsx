@@ -403,7 +403,9 @@ function PanelDatos({ user, onSave }) {
   );
 }
 
-function PanelSeguridad({ onLogout }) {
+function PanelSeguridad({ user, onLogout }) {
+  const isGoogleUser = user?.provider === 'google';
+
   const [pwdForm, setPwdForm] = useState({ current: '', new: '', confirm: '' });
   const [pwdSaving, setPwdSaving] = useState(false);
   const setF = k => v => setPwdForm(f => ({ ...f, [k]: v }));
@@ -411,6 +413,7 @@ function PanelSeguridad({ onLogout }) {
   const handlePwd = async (e) => {
     e.preventDefault();
     if (pwdForm.new !== pwdForm.confirm) { showToast('Las contraseñas no coinciden', 'error'); return; }
+    if (pwdForm.new.length < 8) { showToast('La contraseña debe tener al menos 8 caracteres', 'error'); return; }
     setPwdSaving(true);
     try {
       await api.user.changePassword(pwdForm.current, pwdForm.new);
@@ -428,21 +431,35 @@ function PanelSeguridad({ onLogout }) {
       <h2 className="text-2xl font-bold text-white">Seguridad</h2>
 
       {/* Change password */}
-      <form onSubmit={handlePwd} className="bg-white/5 border border-white/10 rounded-2xl p-6">
-        <h3 className="font-bold text-white mb-5 flex items-center gap-2">
-          <span className="material-symbols-outlined text-violet-400">lock_reset</span>
-          Cambiar contraseña
-        </h3>
-        <div className="space-y-4 max-w-sm">
-          <FInput label="Contraseña actual"  type="password" value={pwdForm.current}  onChange={setF('current')}  />
-          <FInput label="Nueva contraseña"   type="password" value={pwdForm.new}      onChange={setF('new')}      />
-          <FInput label="Confirmar contraseña" type="password" value={pwdForm.confirm} onChange={setF('confirm')}  />
+      {isGoogleUser ? (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-start gap-4">
+          <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-blue-400 text-xl">info</span>
+          </div>
+          <div>
+            <h3 className="font-bold text-white mb-1">Contraseña gestionada por Google</h3>
+            <p className="text-sm text-gray-400">
+              Iniciaste sesión con Google. Para cambiar tu contraseña, hacelo directamente desde tu cuenta de Google.
+            </p>
+          </div>
         </div>
-        <button type="submit" disabled={pwdSaving} className="mt-5 px-6 py-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2">
-          {pwdSaving ? <span className="material-symbols-outlined animate-spin text-base">progress_activity</span> : <span className="material-symbols-outlined text-base">lock_reset</span>}
-          Actualizar contraseña
-        </button>
-      </form>
+      ) : (
+        <form onSubmit={handlePwd} className="bg-white/5 border border-white/10 rounded-2xl p-6">
+          <h3 className="font-bold text-white mb-5 flex items-center gap-2">
+            <span className="material-symbols-outlined text-violet-400">lock_reset</span>
+            Cambiar contraseña
+          </h3>
+          <div className="space-y-4 max-w-sm">
+            <FInput label="Contraseña actual"    type="password" value={pwdForm.current}  onChange={setF('current')}  />
+            <FInput label="Nueva contraseña"     type="password" value={pwdForm.new}      onChange={setF('new')}      />
+            <FInput label="Confirmar contraseña" type="password" value={pwdForm.confirm}  onChange={setF('confirm')}  />
+          </div>
+          <button type="submit" disabled={pwdSaving} className="mt-5 px-6 py-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2">
+            {pwdSaving ? <span className="material-symbols-outlined animate-spin text-base">progress_activity</span> : <span className="material-symbols-outlined text-base">lock_reset</span>}
+            Actualizar contraseña
+          </button>
+        </form>
+      )}
 
       {/* 2FA */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
@@ -613,7 +630,7 @@ export function Profile() {
             {tab === 'pedidos'  && <PanelPedidos orders={orders} loading={loadingOrders} />}
             {tab === 'wishlist' && <PanelWishlist items={wishlist} onRemove={handleRemoveWishlist} />}
             {tab === 'datos'    && <PanelDatos user={user} onSave={u => { setUserData(u); setUser(u); }} />}
-            {tab === 'seguridad' && <PanelSeguridad onLogout={handleLogout} />}
+            {tab === 'seguridad' && <PanelSeguridad user={user} onLogout={handleLogout} />}
           </div>
         </div>
       </div>

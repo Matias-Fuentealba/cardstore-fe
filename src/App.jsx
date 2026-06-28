@@ -27,6 +27,8 @@ import { Profile }     from './pages/Profile';
 import { Deckbuilder } from './pages/Deckbuilder';
 import { ComingSoon }  from './pages/ComingSoon';
 import { TermsAndConditions } from './pages/TermsAndConditions';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword }  from './pages/ResetPassword';
 import { AdminCards }     from './pages/admin/Cards';
 import { AdminInventory } from './pages/admin/Inventory';
 import { AdminOrders }    from './pages/admin/Orders';
@@ -87,6 +89,8 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password"  element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
 
