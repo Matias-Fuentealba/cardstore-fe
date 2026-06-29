@@ -403,11 +403,13 @@ function PanelDatos({ user, onSave }) {
   );
 }
 
-function PanelSeguridad({ user, onLogout }) {
+function PanelSeguridad({ user, onLogout, onDeleteAccount }) {
   const isGoogleUser = user?.provider === 'google';
 
-  const [pwdForm, setPwdForm] = useState({ current: '', new: '', confirm: '' });
-  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdForm,        setPwdForm]        = useState({ current: '', new: '', confirm: '' });
+  const [pwdSaving,      setPwdSaving]      = useState(false);
+  const [confirmDelete,  setConfirmDelete]  = useState(false);
+  const [deleting,       setDeleting]       = useState(false);
   const setF = k => v => setPwdForm(f => ({ ...f, [k]: v }));
 
   const handlePwd = async (e) => {
@@ -489,7 +491,10 @@ function PanelSeguridad({ user, onLogout }) {
         </h3>
         <p className="text-xs text-red-400/70 mb-4">Una vez que eliminés tu cuenta, no hay vuelta atrás.</p>
         <div className="flex gap-3">
-          <button className="px-5 py-2.5 text-sm font-bold text-red-400 border-2 border-red-500/30 rounded-xl hover:bg-red-500/10 transition-all">
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="px-5 py-2.5 text-sm font-bold text-red-400 border-2 border-red-500/30 rounded-xl hover:bg-red-500/10 transition-all"
+          >
             Eliminar cuenta
           </button>
           <button onClick={onLogout} className="px-5 py-2.5 text-sm font-bold text-gray-400 border-2 border-white/10 rounded-xl hover:border-violet-500 hover:text-violet-400 transition-all flex items-center gap-2">
@@ -498,6 +503,53 @@ function PanelSeguridad({ user, onLogout }) {
           </button>
         </div>
       </div>
+
+      {/* Confirm delete modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setConfirmDelete(false); }}>
+          <div className="bg-[#1a1a1a] border border-red-500/30 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-red-400 text-xl">delete_forever</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-white">¿Eliminar tu cuenta?</h3>
+                <p className="text-xs text-gray-400">Esta acción es permanente e irreversible.</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-300 mb-6">
+              Se eliminarán todos tus datos: perfil, historial de pedidos y wishlist. Los pedidos activos no serán cancelados automáticamente.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="flex-1 py-2.5 border border-white/10 text-gray-300 font-semibold text-sm rounded-xl hover:bg-white/5 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    await onDeleteAccount();
+                  } finally {
+                    setDeleting(false);
+                    setConfirmDelete(false);
+                  }
+                }}
+                disabled={deleting}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl transition flex items-center justify-center gap-2"
+              >
+                {deleting
+                  ? <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>
+                  : <span className="material-symbols-outlined text-base">delete_forever</span>}
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -532,6 +584,12 @@ export function Profile() {
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleDeleteAccount = async () => {
+    await api.user.delete();
+    await logout();
+    navigate('/');
   };
 
   const handleRemoveWishlist = async (cardId) => {
@@ -630,7 +688,7 @@ export function Profile() {
             {tab === 'pedidos'  && <PanelPedidos orders={orders} loading={loadingOrders} />}
             {tab === 'wishlist' && <PanelWishlist items={wishlist} onRemove={handleRemoveWishlist} />}
             {tab === 'datos'    && <PanelDatos user={user} onSave={u => { setUserData(u); setUser(u); }} />}
-            {tab === 'seguridad' && <PanelSeguridad user={user} onLogout={handleLogout} />}
+            {tab === 'seguridad' && <PanelSeguridad user={user} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} />}
           </div>
         </div>
       </div>
