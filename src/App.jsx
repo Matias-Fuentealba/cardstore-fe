@@ -8,7 +8,6 @@ import { Toast } from './components/ui/Toast';
 import { Navbar } from './components/layout/Navbar';
 import { AdminLayout } from './components/layout/AdminLayout';
 
-// Pages
 import { Home }     from './pages/Home';
 import { Login }    from './pages/Login';
 import { NotFound } from './pages/NotFound';

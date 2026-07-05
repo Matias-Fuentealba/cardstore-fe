@@ -13,7 +13,7 @@ export function ForgotPassword() {
     try {
       await api.auth.forgotPassword(email);
     } catch {
-      // Silenciamos el error a propósito — no revelar si el email existe.
+      // Swallow the error intentionally — don't reveal whether the email exists.
     } finally {
       setSent(true);
       setLoading(false);

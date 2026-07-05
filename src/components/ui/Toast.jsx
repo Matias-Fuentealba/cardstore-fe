@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Singleton toast — se llama con showToast(msg, type)
+// Global singleton — call showToast(msg, type) from anywhere.
 let _setToast = null;
 
 export function showToast(msg, type = 'success') {

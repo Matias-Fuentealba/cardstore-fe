@@ -40,7 +40,7 @@ export function ResetPassword() {
     }
   };
 
-  // Token ausente en la URL
+  // Missing token — render invalid-link error state.
   if (!token) {
     return (
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-4">

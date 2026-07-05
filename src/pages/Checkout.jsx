@@ -271,7 +271,7 @@ export function Checkout() {
     setConfirming(true);
     try {
 
-      // ── Mercado Pago: crear orden, crear preferencia y redirigir al checkout ──
+      // ── Mercado Pago: create order, create preference and redirect to checkout ──
       if (payMethod === 'mercadopago') {
         const orderRes = await api.orders.create({
           shipping: {
@@ -302,7 +302,7 @@ export function Checkout() {
         return;
       }
 
-      // ── WebPay: crear orden primero, luego iniciar pago en Transbank ─────────
+      // ── WebPay: create order first, then start payment with Transbank ─────────
       if (payMethod === 'webpay') {
         const orderRes = await api.orders.create({
           shipping: {
@@ -334,7 +334,7 @@ export function Checkout() {
         return;
       }
 
-      // ── Otros métodos: crear la orden y mostrar confirmación ────────────────
+      // ── Other methods: create order and show confirmation ────────────────────
       const orderRes = await api.orders.create({
         shipping: {
           firstName: form.nombre,
@@ -491,7 +491,7 @@ export function Checkout() {
                     </button>
                   </div>
 
-                  {/* Retiro en tienda — siempre visible */}
+                  {/* Store pickup — always visible */}
                   <div className="mt-3">
                     {(() => {
                       const retiro = { tipoEntrega: 'RETIRO_TIENDA', costoTotal: 0, diasEntrega: null, tipoServicio: '' };

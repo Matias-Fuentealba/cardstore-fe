@@ -14,7 +14,6 @@ export function Login() {
 
   // Login form state
   const [loginForm, setLoginForm] = useState({ email: '', password: '', remember: false });
-  // Estado para email no verificado
   const [unverifiedEmail, setUnverifiedEmail] = useState(null);
   const [resendingVerif, setResendingVerif] = useState(false);
 
@@ -63,7 +62,7 @@ export function Login() {
       showToast('Error al iniciar sesión con Google', 'error');
       setGoogleLoading(false);
     }
-    // Si no hay error, Supabase redirige al proveedor — no se necesita setGoogleLoading(false)
+    // On success, Supabase redirects to the OAuth provider — no need to reset loading state.
   };
 
   const handleRegister = async (e) => {

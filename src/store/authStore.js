@@ -69,7 +69,7 @@ export const useAuthStore = create((set, get) => ({
 
   // Called from AuthCallback after Google OAuth success.
   loginWithSupabase: async (session) => {
-    const { access_token, user: supaUser } = session;
+    const { access_token } = session;
     let user;
 
     setBearer(access_token);

@@ -1,7 +1,7 @@
 /**
  * La Tech TCG — API Client
- * Auth tokens are managed exclusively via httpOnly cookies set by the backend.
- * Only non-sensitive user fields are persisted in localStorage for UX caching.
+ * Access tokens are kept in memory only (never persisted to localStorage).
+ * Non-sensitive user fields are cached in localStorage for UI rendering only.
  */
 
 export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
